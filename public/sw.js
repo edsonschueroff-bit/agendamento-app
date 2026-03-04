@@ -1,3 +1,18 @@
+// Firebase Messaging Service Worker
+importScripts('https://www.gstatic.com/firebasejs/9.0.0/firebase-app-compat.js');
+importScripts('https://www.gstatic.com/firebasejs/9.0.0/firebase-messaging-compat.js');
+
+firebase.initializeApp({
+    apiKey: "AIzaSyAaCSMvGi6eAqeYAapyUXiPn8mcmHsV-4k",
+    authDomain: "agendamento-app-2e4e2.firebaseapp.com",
+    projectId: "agendamento-app-2e4e2",
+    storageBucket: "agendamento-app-2e4e2.firebasestorage.app",
+    messagingSenderId: "288645485154",
+    appId: "1:288645485154:web:41cce074616cbf5e5cb73b"
+});
+
+const messaging = firebase.messaging();
+
 const CACHE_NAME = 'agenda-facil-v1';
 const ASSETS_TO_CACHE = [
     '/',
@@ -22,23 +37,21 @@ self.addEventListener('fetch', (event) => {
     );
 });
 
-// Push Notifications
-self.addEventListener('push', (event) => {
-    const data = event.data ? event.data.json() : {};
-    const title = data.title || 'Novo Agendamento';
-    const options = {
-        body: data.body || 'Você tem uma nova atualização na sua agenda.',
-        icon: '/icon-192x192.png',
-        badge: '/icon-192x192.png',
-        data: data.url || '/'
+// Background Push handling
+messaging.onBackgroundMessage((payload) => {
+    console.log('Mensagem em background recebida:', payload);
+    const notificationTitle = payload.notification.title;
+    const notificationOptions = {
+        body: payload.notification.body,
+        icon: '/icons/icon-192x192.png'
     };
 
-    event.waitUntil(self.registration.showNotification(title, options));
+    self.registration.showNotification(notificationTitle, notificationOptions);
 });
 
 self.addEventListener('notificationclick', (event) => {
     event.notification.close();
     event.waitUntil(
-        clients.openWindow(event.notification.data)
+        clients.openWindow('/')
     );
 });
