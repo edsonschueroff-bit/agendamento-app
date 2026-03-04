@@ -93,14 +93,28 @@ export default function AgendamentosPage() {
 
   const filteredAppointments = appointments.filter(appointment => {
     const matchesDate = !filterDate ||
-      new Date(appointment.date.toDate()).toISOString().split('T')[0] === filterDate;
+      new Date(appointment.date instanceof Date ? appointment.date : typeof appointment.date === 'string' ? appointment.date : appointment.date.toDate()).toISOString().split('T')[0] === filterDate;
     const matchesClient = !filterClient || appointment.clientId === filterClient;
     return matchesDate && matchesClient;
   });
 
+  // Helper function to convert various date formats to Date object
+  const getDateObject = (dateValue: any): Date => {
+    if (dateValue instanceof Date) {
+      return dateValue;
+    }
+    if (typeof dateValue === 'string') {
+      return new Date(dateValue);
+    }
+    if (dateValue?.toDate && typeof dateValue.toDate === 'function') {
+      return dateValue.toDate();
+    }
+    return new Date();
+  };
+
   const calendarEvents = filteredAppointments.map(appt => {
-    const start = appt.date.toDate();
-    const end = appt.endTime ? appt.endTime.toDate() : new Date(start.getTime() + (appt.duration || 60) * 60000);
+    const start = getDateObject(appt.date);
+    const end = appt.endTime ? getDateObject(appt.endTime) : new Date(start.getTime() + (appt.duration || 60) * 60000);
     return {
       id: appt.id,
       title: `${appt.clientName} - ${appt.serviceName}`,
@@ -113,7 +127,7 @@ export default function AgendamentosPage() {
   const openModal = (appointment?: Appointment) => {
     if (appointment) {
       setEditingAppointment(appointment);
-      const date = new Date(appointment.date.toDate());
+      const date = getDateObject(appointment.date);
       setFormData({
         clientId: appointment.clientId,
         serviceId: appointment.serviceId,
@@ -223,8 +237,8 @@ export default function AgendamentosPage() {
     }
   };
 
-  const formatDateTime = (timestamp: Timestamp) => {
-    const date = timestamp.toDate();
+  const formatDateTime = (dateValue: any) => {
+    const date = getDateObject(dateValue);
     return {
       date: date.toLocaleDateString('pt-BR'),
       time: date.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })

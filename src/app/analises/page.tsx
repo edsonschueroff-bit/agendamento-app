@@ -12,7 +12,7 @@ import {
   BarChart, Bar, LineChart, Line, PieChart, Pie, Cell,
   XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, ComposedChart
 } from 'recharts';
-import { format, startOfMonth, endOfMonth, startOfYear, endOfYear, startOfWeek, endOfWeek, subMonths } from 'date-fns';
+import { format, startOfMonth, endOfMonth, startOfYear, endOfYear, subMonths } from 'date-fns';
 import { ptBR } from 'date-fns/locale/pt-BR';
 
 type PeriodFilter = 'mes' | 'trimestre' | 'ano' | 'customizado';
@@ -73,6 +73,20 @@ export default function AnalisesPage() {
       setIsLoading(false);
     }
   }, [user?.uid]);
+
+  // Helper function to convert various date formats to Date object
+  const getDateObject = (dateValue: any): Date => {
+    if (dateValue instanceof Date) {
+      return dateValue;
+    }
+    if (typeof dateValue === 'string') {
+      return new Date(dateValue);
+    }
+    if (dateValue?.toDate && typeof dateValue.toDate === 'function') {
+      return dateValue.toDate();
+    }
+    return new Date();
+  };
 
   // Get period date range
   const getPeriodDateRange = useCallback(() => {
@@ -200,7 +214,7 @@ export default function AnalisesPage() {
           c.totalSpent > totalRevenue * 0.1 ? 'high' :
           c.totalSpent > totalRevenue * 0.05 ? 'medium' : 'low'
         ) as 'high' | 'medium' | 'low',
-        churnRisk: c.totalAppointments >= 2 && new Date().getTime() - c.lastAppointment.toDate().getTime() > 90 * 24 * 60 * 60 * 1000,
+        churnRisk: c.totalAppointments >= 2 && new Date().getTime() - getDateObject(c.lastAppointment).getTime() > 90 * 24 * 60 * 60 * 1000,
       }))
       .sort((a, b) => b.totalSpent - a.totalSpent)
       .slice(0, 5);
@@ -223,14 +237,14 @@ export default function AnalisesPage() {
     }
 
     filteredAppointments.forEach(apt => {
-      const dateKey = format(apt.date.toDate(), 'dd/MM');
+      const dateKey = format(getDateObject(apt.date), 'dd/MM');
       if (dailyData[dateKey]) {
         dailyData[dateKey].receitas += apt.servicePrice || 0;
       }
     });
 
     filteredExpenses.forEach(exp => {
-      const dateKey = format(exp.date.toDate(), 'dd/MM');
+      const dateKey = format(getDateObject(exp.date), 'dd/MM');
       if (dailyData[dateKey]) {
         dailyData[dateKey].despesas += exp.amount;
       }

@@ -35,6 +35,20 @@ export default function ClientesPage() {
     notes: '',
   });
 
+  // Helper function to convert various date formats to Date object
+  const getDateObject = (dateValue: any): Date => {
+    if (dateValue instanceof Date) {
+      return dateValue;
+    }
+    if (typeof dateValue === 'string') {
+      return new Date(dateValue);
+    }
+    if (dateValue?.toDate && typeof dateValue.toDate === 'function') {
+      return dateValue.toDate();
+    }
+    return new Date();
+  };
+
   useEffect(() => {
     if (!loading && !isAuthenticated) {
       router.push('/login');
@@ -419,7 +433,7 @@ export default function ClientesPage() {
               ) : clientHistory.length > 0 ? (
                 <div className="space-y-6">
                   {clientHistory.map((apt) => {
-                    const aptDate = apt.date.toDate();
+                    const aptDate = getDateObject(apt.date);
                     return (
                       <div key={apt.id} className="relative pl-8 border-l-2 border-blue-100">
                         <div className="absolute -left-[9px] top-0 w-4 h-4 rounded-full bg-blue-600 border-4 border-white shadow-sm"></div>
