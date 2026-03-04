@@ -17,3 +17,28 @@ body {
   color: var(--foreground);
   font-family: var(--font-geist-sans), Arial, Helvetica, sans-serif;
 }
+
+/* Force readable text color in form controls across themes */
+:root {
+  --placeholder: rgba(23,23,23,0.35);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --placeholder: rgba(237,237,237,0.45);
+  }
+}
+
+input, textarea, select, button, [contenteditable="true"] {
+  color: var(--foreground) !important;
+  caret-color: var(--foreground) !important;
+}
+
+input::placeholder, textarea::placeholder {
+  color: var(--placeholder) !important;
+}
+
+/* Ensure selects show legible selected option text in some browsers */
+select option {
+  color: var(--foreground) !important;
+}
