@@ -1,6 +1,7 @@
 import { initializeApp, getApps, getApp } from 'firebase/app';
 import { getAuth, connectAuthEmulator } from 'firebase/auth';
 import { getFirestore, connectFirestoreEmulator } from 'firebase/firestore';
+import { getMessaging, isSupported } from 'firebase/messaging';
 
 // Configuração do Firebase — requer variáveis de ambiente
 const firebaseConfig = {
@@ -40,6 +41,14 @@ const app = getApps().length === 0 ? initializeApp(firebaseConfig) : getApp();
 // Initialize Firebase services
 export const auth = getAuth(app);
 export const db = getFirestore(app);
+
+// Initialize Messaging (só no lado do cliente e se suportado)
+export const messaging = typeof window !== 'undefined'
+  ? async () => {
+    const supported = await isSupported();
+    return supported ? getMessaging(app) : null;
+  }
+  : null;
 
 // Conectar aos emuladores se a flag estiver ativada
 if (useEmulator) {
