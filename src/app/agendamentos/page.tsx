@@ -7,13 +7,13 @@ import { useRouter } from 'next/navigation';
 import { useAuthContext } from '@/components/providers/AuthProvider';
 import AuthenticatedLayout from '@/components/layout/AuthenticatedLayout';
 import { Appointment, Client, Service } from '@/lib/types';
-import { getSubDocuments } from '@/lib/firestoreService';
-import { createAppointment, editAppointment, removeAppointment } from '@/modules/agenda/agendaService';
+import { getSubDocuments, addSubDocument, updateSubDocument } from '@/lib/firestoreService';
 import { Timestamp } from 'firebase/firestore';
 import { Calendar, dateFnsLocalizer } from 'react-big-calendar';
 import { format, parse, startOfWeek, getDay } from 'date-fns';
 import { ptBR } from 'date-fns/locale/pt-BR';
 import 'react-big-calendar/lib/css/react-big-calendar.css';
+import { removeAppointment } from '@/modules/agenda/agendaService';
 
 const locales = {
   'pt-BR': ptBR,
@@ -161,18 +161,18 @@ export default function AgendamentosPage() {
         serviceId: formData.serviceId,
         serviceName: selectedService.name,
         servicePrice: selectedService.price,
-        date: Timestamp.fromDate(dateTime),
+        date: formData.date, // YYYY-MM-DD string
+        time: formData.time,
+        dateTime: Timestamp.fromDate(dateTime),
         status: formData.status,
         notes: formData.notes,
         userId: user!.uid
       };
 
       if (editingAppointment) {
-        const result = await editAppointment(user!.uid, editingAppointment.id!, appointmentData);
-        if (!result.success) throw new Error(result.error as string);
+        await updateSubDocument('users', user!.uid, 'appointments', editingAppointment.id!, appointmentData);
       } else {
-        const result = await createAppointment(user!.uid, appointmentData);
-        if (!result.success) throw new Error(result.error as string);
+        await addSubDocument('users', user!.uid, 'appointments', appointmentData);
       }
 
       closeModal();

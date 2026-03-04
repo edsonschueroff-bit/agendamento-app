@@ -161,4 +161,16 @@ export interface BusinessSettings {
   phone?: string;
   schedule: Record<DayOfWeek, DaySchedule>;
   updatedAt?: Timestamp;
-} 
+}
+
+// Tipos de Despesa
+export interface Expense {
+  id?: string;
+  description: string;
+  category: 'Aluguel' | 'Materiais' | 'Marketing' | 'Utilidades' | 'Outros';
+  amount: number;
+  date: Timestamp;
+  userId: string;
+  createdAt: Timestamp;
+  updatedAt: Timestamp;
+}
