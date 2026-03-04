@@ -351,34 +351,35 @@ export default function AgendamentosPage() {
           <style>{`
             .rbc-event {
               padding: 1px 2px !important;
-              font-size: 10px !important;
-              line-height: 1.2 !important;
-              min-height: auto !important;
+              font-size: 12px !important;
+              line-height: 1.4 !important;
+              height: auto !important;
+              min-height: 20px !important;
+              max-height: 22px !important;
+              overflow: hidden !important;
             }
             .rbc-event-label {
-              font-size: 9px !important;
-              display: none;
+              display: none !important;
+              height: 0 !important;
             }
             .rbc-event-content {
-              padding: 0px 1px !important;
+              padding: 0px !important;
               white-space: nowrap;
               overflow: hidden;
               text-overflow: ellipsis;
               margin: 0 !important;
+              line-height: 1.4 !important;
             }
-            .rbc-event-label,
             .rbc-addons-dnd-resizable > * {
               display: none !important;
             }
             .rbc-day-slot .rbc-events {
               flex-direction: column;
             }
-            .rbc-time-slot .rbc-event {
-              margin: 0 !important;
-            }
             .rbc-event:hover {
               opacity: 0.85;
               box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+              z-index: 10;
             }
             .rbc-toolbar {
               padding: 12px !important;
@@ -394,7 +395,10 @@ export default function AgendamentosPage() {
               border: 1px solid #e5e7eb;
             }
             .rbc-month-row {
-              min-height: 80px;
+              min-height: 60px;
+            }
+            .rbc-date-cell {
+              padding: 2px !important;
             }
           `}</style>
           
