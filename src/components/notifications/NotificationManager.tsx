@@ -33,9 +33,9 @@ export default function NotificationManager() {
                 alert('🚀 Sucesso! Notificações ativadas com sucesso neste dispositivo.');
                 setShowBanner(false);
             }
-        } catch (err: any) {
+        } catch (err: unknown) {
             console.error('Erro ao solicitar:', err);
-            const message = err?.message || 'Erro desconhecido ao ativar notificações.';
+            const message = err instanceof Error ? err.message : 'Erro desconhecido ao ativar notificações.';
             alert('⚠️ ' + message);
         }
     };

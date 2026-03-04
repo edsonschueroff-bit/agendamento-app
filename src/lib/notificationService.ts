@@ -8,7 +8,7 @@ export const requestNotificationPermission = async () => {
 
     try {
         // 1. Verificar suporte básico e modo standalone no iOS
-        const isStandalone = (window.navigator as any).standalone || window.matchMedia('(display-mode: standalone)').matches;
+        const isStandalone = ('standalone' in window.navigator && (window.navigator as unknown as { standalone: boolean }).standalone) || window.matchMedia('(display-mode: standalone)').matches;
         const hasNotification = 'Notification' in window;
 
         if (!hasNotification) {
