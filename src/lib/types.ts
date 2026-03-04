@@ -160,6 +160,21 @@ export interface BusinessSettings {
   businessName?: string;
   phone?: string;
   schedule: Record<DayOfWeek, DaySchedule>;
+  // Dias de folga e feriados
+  holidays?: string[]; // Array de datas em formato YYYY-MM-DD
+  timeBetweenAppointments?: number; // em minutos (padrão 0)
+  // Regras de cancelamento
+  cancellationPolicy?: {
+    minHoursNotice: number; // Horas mínimas para cancelar (padrão 24)
+    penaltyPercentage: number; // Percentual de penalidade (0-100)
+  };
+  // Configurações de notificações
+  notifications?: {
+    sendEmailReminder: boolean;
+    reminderHoursBefore: number; // 24, 12, 1
+    sendSMSReminder: boolean;
+    notifyOnNewAppointment: boolean;
+  };
   updatedAt?: Timestamp;
 }
 
@@ -173,4 +188,55 @@ export interface Expense {
   userId: string;
   createdAt: Timestamp;
   updatedAt: Timestamp;
+}
+
+// Tipos para Análises Avançadas
+export interface ServiceAnalytics {
+  serviceId: string;
+  serviceName: string;
+  totalAppointments: number;
+  totalRevenue: number;
+  averagePrice: number;
+  trend: number; // percentual de crescimento
+  ranking: number; // posição no ranking
+}
+
+export interface ClientAnalytics {
+  clientId: string;
+  clientName: string;
+  totalAppointments: number;
+  totalSpent: number;
+  averageTicket: number;
+  lastAppointment: Timestamp;
+  status: 'regular' | 'occasional' | 'dormant';
+  potential: 'high' | 'medium' | 'low';
+  churnRisk: boolean;
+}
+
+export interface RevenueAnalytics {
+  period: string; // formato "MMM yyyy" ou outro customizado
+  totalRevenue: number;
+  totalExpenses: number;
+  netProfit: number;
+  profitMargin: number;
+  appointmentCount: number;
+  averageTicket: number;
+  trend: number; // percentual comparado com período anterior
+}
+
+export interface ForecastData {
+  date: string; // YYYY-MM-DD
+  predictedRevenue: number;
+  confidence: number; // 0-100
+  basedOnAppointments: number;
+}
+
+export interface DashboardAnalytics {
+  period: string;
+  revenue: RevenueAnalytics;
+  topServices: ServiceAnalytics[];
+  topClients: ClientAnalytics[];
+  forecast: ForecastData[];
+  healthScore: number; // 0-100
+  insights: string[];
 }
