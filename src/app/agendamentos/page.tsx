@@ -115,12 +115,18 @@ export default function AgendamentosPage() {
   const calendarEvents = filteredAppointments.map(appt => {
     const start = getDateObject(appt.date);
     const end = appt.endTime ? getDateObject(appt.endTime) : new Date(start.getTime() + (appt.duration || 60) * 60000);
+    
+    // Truncate title to fit better in calendar
+    const clientNameShort = appt.clientName.length > 20 ? appt.clientName.substring(0, 20) + '...' : appt.clientName;
+    const serviceNameShort = appt.serviceName.length > 15 ? appt.serviceName.substring(0, 15) + '...' : appt.serviceName;
+    
     return {
       id: appt.id,
-      title: `${appt.clientName} - ${appt.serviceName}`,
+      title: `${clientNameShort} - ${serviceNameShort}`,
       start,
       end,
-      resource: appt
+      resource: appt,
+      desc: `${appt.clientName} - ${appt.serviceName}` // Full text for tooltip
     };
   });
 
@@ -341,6 +347,37 @@ export default function AgendamentosPage() {
 
         {/* Lista de Agendamentos */}
         <div className="bg-white rounded-lg shadow">
+          {/* Custom Calendar Styles */}
+          <style>{`
+            .rbc-event {
+              padding: 2px 4px !important;
+              font-size: 11px !important;
+            }
+            .rbc-event-label {
+              font-size: 10px !important;
+            }
+            .rbc-event-content {
+              padding: 1px 2px !important;
+              white-space: nowrap;
+              overflow: hidden;
+              text-overflow: ellipsis;
+            }
+            .rbc-event:hover {
+              opacity: 0.9;
+            }
+            .rbc-toolbar {
+              padding: 12px !important;
+              margin-bottom: 12px !important;
+            }
+            .rbc-toolbar button {
+              padding: 4px 8px !important;
+              font-size: 12px !important;
+            }
+            .rbc-month-view {
+              border: 1px solid #e5e7eb;
+            }
+          `}</style>
+          
           {isLoading ? (
             <div className="p-6 text-center">Carregando agendamentos...</div>
           ) : viewMode === 'calendar' ? (
