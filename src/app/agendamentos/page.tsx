@@ -350,31 +350,51 @@ export default function AgendamentosPage() {
           {/* Custom Calendar Styles */}
           <style>{`
             .rbc-event {
-              padding: 2px 4px !important;
-              font-size: 11px !important;
+              padding: 1px 2px !important;
+              font-size: 10px !important;
+              line-height: 1.2 !important;
+              min-height: auto !important;
             }
             .rbc-event-label {
-              font-size: 10px !important;
+              font-size: 9px !important;
+              display: none;
             }
             .rbc-event-content {
-              padding: 1px 2px !important;
+              padding: 0px 1px !important;
               white-space: nowrap;
               overflow: hidden;
               text-overflow: ellipsis;
+              margin: 0 !important;
+            }
+            .rbc-event-label,
+            .rbc-addons-dnd-resizable > * {
+              display: none !important;
+            }
+            .rbc-day-slot .rbc-events {
+              flex-direction: column;
+            }
+            .rbc-time-slot .rbc-event {
+              margin: 0 !important;
             }
             .rbc-event:hover {
-              opacity: 0.9;
+              opacity: 0.85;
+              box-shadow: 0 2px 4px rgba(0,0,0,0.1);
             }
             .rbc-toolbar {
               padding: 12px !important;
               margin-bottom: 12px !important;
+              flex-wrap: wrap;
             }
             .rbc-toolbar button {
               padding: 4px 8px !important;
               font-size: 12px !important;
+              margin: 2px !important;
             }
             .rbc-month-view {
               border: 1px solid #e5e7eb;
+            }
+            .rbc-month-row {
+              min-height: 80px;
             }
           `}</style>
           
