@@ -35,26 +35,37 @@ export default function NotificationManager() {
         }
     };
 
-    if (!showBanner) return null;
+    if (!showBanner) {
+        console.log('Banner oculto (showBanner é false)');
+        return null;
+    }
+
+    console.log('Renderizando banner na tela...');
 
     return (
-        <div className="bg-blue-600 text-white p-4 flex justify-between items-center shadow-lg rounded-lg mb-6">
+        <div className="bg-blue-600 text-white p-4 flex justify-between items-center shadow-2xl rounded-lg mb-6 relative z-[9999] border-2 border-yellow-400">
             <div className="flex items-center">
                 <span className="text-2xl mr-3">🔔</span>
                 <div>
-                    <p className="font-bold">Ativar Notificações?</p>
-                    <p className="text-sm">Receba alertas instantâneos de novos agendamentos no seu celular.</p>
+                    <p className="font-bold">Ativar Notificações? (Teste)</p>
+                    <p className="text-sm">Receba alertas instantâneos de novos agendamentos.</p>
                 </div>
             </div>
             <div className="flex space-x-2">
                 <button
-                    onClick={() => setShowBanner(false)}
+                    onClick={() => {
+                        console.log('Clicou em Agora não');
+                        setShowBanner(false);
+                    }}
                     className="px-4 py-2 text-sm font-medium hover:bg-blue-700 rounded transition-colors"
                 >
                     Agora não
                 </button>
                 <button
-                    onClick={handleRequestPermission}
+                    onClick={() => {
+                        console.log('Clicou em Ativar Agora');
+                        handleRequestPermission();
+                    }}
                     className="px-4 py-2 text-sm font-bold bg-white text-blue-600 hover:bg-gray-100 rounded shadow transition-colors"
                 >
                     Ativar Agora
