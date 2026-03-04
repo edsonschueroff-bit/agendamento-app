@@ -13,8 +13,13 @@ export const requestNotificationPermission = async () => {
             const messaging = getMessaging ? await getMessaging() : null;
             if (!messaging) return null;
 
+            // Garantir que o Service Worker está registrado e pronto
+            const registration = await navigator.serviceWorker.register('/sw.js');
+            console.log('Service Worker registrado:', registration);
+
             const token = await getToken(messaging, {
-                vapidKey: VAPID_KEY
+                vapidKey: VAPID_KEY,
+                serviceWorkerRegistration: registration
             });
 
             console.log('Token de notificação capturado:', token);
