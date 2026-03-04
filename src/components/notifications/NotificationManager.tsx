@@ -4,71 +4,67 @@ import { useEffect, useState } from 'react';
 import { requestNotificationPermission, onMessageListener } from '@/lib/notificationService';
 
 export default function NotificationManager() {
-    const [showBanner, setShowBanner] = useState(false);
+    const [showBanner, setShowBanner] = useState(true); // FORÇADO TRUE PARA DEBUG
+    const [status, setStatus] = useState('Verificando...');
 
     useEffect(() => {
-        // Verificar se já temos permissão
-        console.log('Verificando suporte a notificações...');
-        if (typeof window !== 'undefined' && 'Notification' in window) {
-            console.log('Permissão atual:', Notification.permission);
-            if (Notification.permission === 'default') {
-                console.log('Exibindo banner de notificações');
-                setShowBanner(true);
-            }
-        } else {
-            console.log('Navegador não suporta notificações');
-        }
+        if (typeof window !== 'undefined') {
+            const hasNotification = 'Notification' in window;
+            const permission = hasNotification ? Notification.permission : 'não suportado';
+            console.log('DEBUG NOTIFICAÇÃO:', { hasNotification, permission });
+            setStatus(`Suporte: ${hasNotification ? 'Sim' : 'Não'} | Permissão: ${permission}`);
 
-        // Ouvinte para mensagens em primeiro plano
-        onMessageListener().then((payload) => {
-            if (payload) {
-                console.log('Notificação recebida em primeiro plano:', payload);
-            }
-        });
+            // Ouvinte para mensagens em primeiro plano
+            onMessageListener().then((payload) => {
+                if (payload) {
+                    console.log('Notificação recebida em primeiro plano:', payload);
+                    alert('Notificação Recebida: ' + JSON.stringify(payload));
+                }
+            });
+        }
     }, []);
 
     const handleRequestPermission = async () => {
-        const token = await requestNotificationPermission();
-        if (token) {
-            setShowBanner(false);
-            // No futuro, salvaremos este token no Firestore vinculado ao usuário
+        console.log('Solicitando permissão...');
+        try {
+            const token = await requestNotificationPermission();
+            console.log('Token obtido:', token);
+            if (token) {
+                alert('Sucesso! Notificações ativadas.');
+                setShowBanner(false);
+            } else {
+                alert('Não foi possível obter o token. Verifique o console.');
+            }
+        } catch (err) {
+            console.error('Erro ao solicitar:', err);
+            alert('Erro: ' + (err instanceof Error ? err.message : String(err)));
         }
     };
 
-    if (!showBanner) {
-        console.log('Banner oculto (showBanner é false)');
-        return null;
-    }
-
-    console.log('Renderizando banner na tela...');
+    if (!showBanner) return null;
 
     return (
-        <div className="bg-blue-600 text-white p-4 flex justify-between items-center shadow-2xl rounded-lg mb-6 relative z-[9999] border-2 border-yellow-400">
-            <div className="flex items-center">
-                <span className="text-2xl mr-3">🔔</span>
+        <div className="fixed bottom-4 left-4 right-4 md:left-auto md:right-4 md:w-96 bg-blue-600 text-white p-6 shadow-2xl rounded-xl z-[99999] border-4 border-yellow-400 transform transition-all hover:scale-105 animate-bounce">
+            <div className="flex items-start mb-4">
+                <span className="text-3xl mr-4">🔔</span>
                 <div>
-                    <p className="font-bold">Ativar Notificações? (Teste)</p>
-                    <p className="text-sm">Receba alertas instantâneos de novos agendamentos.</p>
+                    <p className="font-bold text-lg mb-1">MODO DEBUG: Ativar Notificações</p>
+                    <p className="text-sm opacity-90 mb-2">{status}</p>
+                    <p className="text-sm">Clique no botão abaixo para testar a ativação agora.</p>
                 </div>
             </div>
-            <div className="flex space-x-2">
+            <div className="flex space-x-3">
                 <button
-                    onClick={() => {
-                        console.log('Clicou em Agora não');
-                        setShowBanner(false);
-                    }}
-                    className="px-4 py-2 text-sm font-medium hover:bg-blue-700 rounded transition-colors"
+                    onClick={() => setShowBanner(false)}
+                    className="flex-1 px-4 py-3 text-sm font-medium border border-white/30 hover:bg-blue-700 rounded-lg transition-colors"
                 >
-                    Agora não
+                    Fechar
                 </button>
                 <button
-                    onClick={() => {
-                        console.log('Clicou em Ativar Agora');
-                        handleRequestPermission();
-                    }}
-                    className="px-4 py-2 text-sm font-bold bg-white text-blue-600 hover:bg-gray-100 rounded shadow transition-colors"
+                    onClick={handleRequestPermission}
+                    className="flex-1 px-4 py-3 text-sm font-bold bg-white text-blue-600 hover:bg-gray-100 rounded-lg shadow-lg transition-all active:scale-95"
                 >
-                    Ativar Agora
+                    ATIVAR AGORA
                 </button>
             </div>
         </div>
