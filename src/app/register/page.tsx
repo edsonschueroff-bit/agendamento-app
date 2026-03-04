@@ -66,7 +66,7 @@ export default function RegisterPage() {
           setError('Erro de conexão. Verifique sua internet e tente novamente.');
           break;
         default:
-          setError('Erro ao criar conta. Tente novamente.');
+          setError(`Erro ao criar conta (${error.code || 'erro desconhecido'}). Tente novamente.`);
       }
     } finally {
       setLoading(false);
