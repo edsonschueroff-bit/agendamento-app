@@ -17,8 +17,8 @@ const CACHE_NAME = 'agenda-facil-v1';
 const ASSETS_TO_CACHE = [
     '/',
     '/manifest.json',
-    '/icons/icon-192x192.png',
-    '/icons/icon-512x512.png'
+    '/icon-192x192.png',
+    '/icon-512x512.png'
 ];
 
 self.addEventListener('install', (event) => {
@@ -43,7 +43,7 @@ messaging.onBackgroundMessage((payload) => {
     const notificationTitle = payload.notification.title;
     const notificationOptions = {
         body: payload.notification.body,
-        icon: '/icons/icon-192x192.png'
+        icon: '/icon-192x192.png'
     };
 
     self.registration.showNotification(notificationTitle, notificationOptions);
