@@ -1,7 +1,7 @@
 import { getToken, onMessage, Messaging } from 'firebase/messaging';
 import { messaging as getMessagingInstance } from './firebase';
 
-const VAPID_KEY = "SUA_VAPID_KEY_AQUI"; // Será substituída quando o usuário fornecer
+const VAPID_KEY = "BAqASsIdkJC9scfzCcCKCmFrefgCRw-bSwXVsXbZjL4Ga94YkB2tz-HQ_QC9lXal2ByDs96dDX3QF1zrN3EhK-M";
 
 export const requestNotificationPermission = async () => {
     if (typeof window === 'undefined') return null;
