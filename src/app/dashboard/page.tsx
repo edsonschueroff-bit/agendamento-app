@@ -28,7 +28,6 @@ interface TodayAppointment {
   value: number;
 }
 
-import { db } from '@/lib/firebase';
 import NotificationManager from '@/components/notifications/NotificationManager';
 
 export default function DashboardPage() {

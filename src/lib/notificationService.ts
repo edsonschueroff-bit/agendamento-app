@@ -1,4 +1,4 @@
-import { getToken, onMessage, Messaging } from 'firebase/messaging';
+import { getToken, onMessage, type Messaging } from 'firebase/messaging';
 import { messaging as getMessagingInstance } from './firebase';
 
 const VAPID_KEY = "BAqASsIdkJC9scfzCcCKCmFrefgCRw-bSwXVsXbZjL4Ga94YkB2tz-HQ_QC9lXal2ByDs96dDX3QF1zrN3EhK-M";
@@ -9,7 +9,8 @@ export const requestNotificationPermission = async () => {
     try {
         const permission = await Notification.requestPermission();
         if (permission === 'granted') {
-            const messaging = await (getMessagingInstance as any)();
+            const getMessaging = getMessagingInstance as (() => Promise<Messaging | null>);
+            const messaging = getMessaging ? await getMessaging() : null;
             if (!messaging) return null;
 
             const token = await getToken(messaging, {
@@ -27,7 +28,8 @@ export const requestNotificationPermission = async () => {
 };
 
 export const onMessageListener = async () => {
-    const messaging = await (getMessagingInstance as any)();
+    const getMessaging = getMessagingInstance as (() => Promise<Messaging | null>);
+    const messaging = getMessaging ? await getMessaging() : null;
     if (!messaging) return;
 
     return new Promise((resolve) => {

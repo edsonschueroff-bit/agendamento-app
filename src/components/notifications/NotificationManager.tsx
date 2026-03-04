@@ -20,9 +20,10 @@ export default function NotificationManager() {
         }
 
         // Ouvinte para mensagens em primeiro plano
-        onMessageListener().then((payload: any) => {
-            console.log('Notificação recebida em primeiro plano:', payload);
-            // Aqui você poderia mostrar um toast personalizado
+        onMessageListener().then((payload) => {
+            if (payload) {
+                console.log('Notificação recebida em primeiro plano:', payload);
+            }
         });
     }, []);
 
