@@ -18,7 +18,7 @@ body {
   font-family: var(--font-geist-sans), Arial, Helvetica, sans-serif;
 }
 
-/* Force readable text color in form controls across themes */
+/* Force readable text color ONLY in form input fields */
 :root {
   --placeholder: rgba(23,23,23,0.35);
 }
@@ -29,12 +29,22 @@ body {
   }
 }
 
-input, textarea, select, button, [contenteditable="true"] {
+/* Aplicar APENAS em campos de entrada (não em botões) */
+input[type="text"],
+input[type="email"],
+input[type="password"],
+input[type="date"],
+input[type="time"],
+input[type="number"],
+input[type="tel"],
+textarea,
+select {
   color: var(--foreground) !important;
   caret-color: var(--foreground) !important;
 }
 
-input::placeholder, textarea::placeholder {
+input::placeholder, 
+textarea::placeholder {
   color: var(--placeholder) !important;
 }
 
