@@ -8,10 +8,15 @@ export default function NotificationManager() {
 
     useEffect(() => {
         // Verificar se já temos permissão
+        console.log('Verificando suporte a notificações...');
         if (typeof window !== 'undefined' && 'Notification' in window) {
+            console.log('Permissão atual:', Notification.permission);
             if (Notification.permission === 'default') {
+                console.log('Exibindo banner de notificações');
                 setShowBanner(true);
             }
+        } else {
+            console.log('Navegador não suporta notificações');
         }
 
         // Ouvinte para mensagens em primeiro plano
