@@ -30,14 +30,13 @@ export default function NotificationManager() {
             const token = await requestNotificationPermission();
             console.log('Token obtido:', token);
             if (token) {
-                alert('Sucesso! Notificações ativadas.');
+                alert('🚀 Sucesso! Notificações ativadas com sucesso neste dispositivo.');
                 setShowBanner(false);
-            } else {
-                alert('Não foi possível obter o token. Verifique o console.');
             }
-        } catch (err) {
+        } catch (err: any) {
             console.error('Erro ao solicitar:', err);
-            alert('Erro: ' + (err instanceof Error ? err.message : String(err)));
+            const message = err?.message || 'Erro desconhecido ao ativar notificações.';
+            alert('⚠️ ' + message);
         }
     };
 
