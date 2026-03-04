@@ -17,10 +17,26 @@ export interface Client {
   email: string;
   phone: string;
   address?: string;
+  city?: string;
+  zipCode?: string;
   notes?: string;
   userId: string;
+  totalSpent: number;
+  totalAppointments: number;
+  lastAppointment?: Timestamp; // SEMPRE Timestamp, nunca string
+  joinedAt: Timestamp;
   createdAt: Timestamp;
   updatedAt: Timestamp;
+}
+
+// Histórico de cliente (subcollection)
+export interface ClientHistory {
+  id?: string;
+  date: Timestamp; // SEMPRE Timestamp
+  service: string;
+  price: number;
+  status: string;
+  createdAt: Timestamp;
 }
 
 // Tipos de serviço
@@ -42,13 +58,16 @@ export interface Appointment {
   id?: string;
   clientId: string;
   clientName: string;
+  clientPhone: string;
   serviceId: string;
   serviceName: string;
   servicePrice: number;
-  date: Timestamp; // startDate/time
+  price: number;
+  date: Timestamp; // SEMPRE Timestamp, NUNCA string
+  time: string; // HH:MM separado
   endTime?: Timestamp;
   duration?: number; // em minutos
-  status: 'agendado' | 'concluido' | 'cancelado';
+  status: 'agendado' | 'confirmado' | 'concluido' | 'cancelado';
   notes?: string;
   userId: string;
   createdAt: Timestamp;
@@ -160,7 +179,7 @@ export interface BusinessSettings {
   businessName?: string;
   phone?: string;
   schedule: Record<DayOfWeek, DaySchedule>;
-  // Dias de folga e feriados
+  // Dias de folga e feriados (mantém em string YYYY-MM-DD para facilitar UI)
   holidays?: string[]; // Array de datas em formato YYYY-MM-DD
   timeBetweenAppointments?: number; // em minutos (padrão 0)
   // Regras de cancelamento
@@ -175,6 +194,8 @@ export interface BusinessSettings {
     sendSMSReminder: boolean;
     notifyOnNewAppointment: boolean;
   };
+  publicUrl?: string;
+  createdAt?: Timestamp;
   updatedAt?: Timestamp;
 }
 
@@ -182,9 +203,10 @@ export interface BusinessSettings {
 export interface Expense {
   id?: string;
   description: string;
-  category: 'Aluguel' | 'Materiais' | 'Marketing' | 'Utilidades' | 'Outros';
   amount: number;
-  date: Timestamp;
+  category: 'material' | 'aluguel' | 'salário' | 'outro';
+  date: Timestamp; // SEMPRE Timestamp, NUNCA string
+  paymentMethod?: 'dinheiro' | 'débito' | 'crédito' | 'PIX';
   userId: string;
   createdAt: Timestamp;
   updatedAt: Timestamp;
@@ -240,3 +262,32 @@ export interface DashboardAnalytics {
   healthScore: number; // 0-100
   insights: string[];
 }
+
+/**
+ * HELPER: Converte qualquer tipo de data para Timestamp
+ * Aceita: Date, string YYYY-MM-DD, Timestamp ou null/undefined
+ * Retorna: Timestamp ou null
+ */
+export const ensureTimestamp = (dateValue: any): Timestamp | null => {
+  if (!dateValue) return null;
+  if (dateValue instanceof Timestamp) return dateValue;
+  if (dateValue instanceof Date) return Timestamp.fromDate(dateValue);
+  if (typeof dateValue === 'string') {
+    try {
+      return Timestamp.fromDate(new Date(dateValue));
+    } catch {
+      console.error('Invalid date string:', dateValue);
+      return null;
+    }
+  }
+  return null;
+};
+
+/**
+ * HELPER: Converte Timestamp para Date para comparações
+ */
+export const timestampToDate = (ts: Timestamp | null | undefined): Date | null => {
+  if (!ts) return null;
+  if (ts instanceof Timestamp) return ts.toDate();
+  return null;
+};

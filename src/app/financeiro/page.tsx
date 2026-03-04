@@ -29,7 +29,7 @@ interface PaymentEntry {
   serviceName: string;
   amount: number;
   date: Date;
-  status: 'concluido' | 'agendado' | 'cancelado';
+  status: 'agendado' | 'confirmado' | 'concluido' | 'cancelado';
 }
 
 type PeriodFilter = 'hoje' | 'semana' | 'mes' | 'ano' | 'customizado';
@@ -59,7 +59,7 @@ export default function FinanceiroPage() {
   const [newExpense, setNewExpense] = useState({
     description: '',
     amount: '',
-    category: 'Outros' as Expense['category'],
+    category: 'outro' as Expense['category'],
     date: new Date().toISOString().split('T')[0],
   });
 
@@ -195,7 +195,7 @@ export default function FinanceiroPage() {
       setNewExpense({
         description: '',
         amount: '',
-        category: 'Outros',
+        category: 'outro',
         date: new Date().toISOString().split('T')[0],
       });
       loadFinancialData();
@@ -551,8 +551,8 @@ export default function FinanceiroPage() {
                     value={newExpense.category}
                     onChange={e => setNewExpense({ ...newExpense, category: e.target.value as any })}
                   >
-                    {['Aluguel', 'Materiais', 'Marketing', 'Utilidades', 'Outros'].map(c => (
-                      <option key={c} value={c}>{c}</option>
+                    {['aluguel', 'material', 'salário', 'outro'].map(c => (
+                      <option key={c} value={c}>{c.charAt(0).toUpperCase() + c.slice(1)}</option>
                     ))}
                   </select>
                 </div>

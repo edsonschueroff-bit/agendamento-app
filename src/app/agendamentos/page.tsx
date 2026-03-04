@@ -51,7 +51,7 @@ export default function AgendamentosPage() {
     serviceId: '',
     date: '',
     time: '',
-    status: 'agendado' as 'agendado' | 'concluido' | 'cancelado',
+    status: 'agendado' as 'agendado' | 'confirmado' | 'concluido' | 'cancelado',
     notes: ''
   });
 
@@ -665,7 +665,7 @@ export default function AgendamentosPage() {
                       <select
                         required
                         value={formData.status}
-                        onChange={(e) => setFormData({ ...formData, status: e.target.value as 'agendado' | 'concluido' | 'cancelado' })}
+                        onChange={(e) => setFormData({ ...formData, status: e.target.value as 'agendado' | 'confirmado' | 'concluido' | 'cancelado' })}
                         className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                       >
                         <option value="agendado">Agendado</option>

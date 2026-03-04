@@ -24,7 +24,7 @@ interface TodayAppointment {
   clientName: string;
   service: string;
   time: string;
-  status: 'agendado' | 'concluido' | 'cancelado';
+  status: 'agendado' | 'confirmado' | 'concluido' | 'cancelado';
   value: number;
 }
 

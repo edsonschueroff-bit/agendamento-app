@@ -137,14 +137,17 @@ export default function PublicBookingPage() {
                 userId,
                 clientId: 'public',
                 clientName,
+                clientPhone,
                 serviceId: selectedService.id!,
                 serviceName: selectedService.name,
                 servicePrice: selectedService.price,
+                price: selectedService.price,
                 date: Timestamp.fromDate(startTime),
+                time: selectedTime,
                 endTime: Timestamp.fromDate(endTime),
                 duration: selectedService.duration,
                 status: 'agendado',
-                notes: `Telefone: ${clientPhone}${payNow ? ' (Solicitou pagamento online)' : ''}`,
+                notes: payNow ? '(Solicitou pagamento online)' : '',
             });
 
             setConfirmedId(id);
