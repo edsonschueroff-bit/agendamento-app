@@ -32,35 +32,56 @@ export default function LoginPage() {
     setError('');
 
     try {
+      if (!email || !password) {
+        setError('Email e senha são obrigatórios.');
+        setLoading(false);
+        return;
+      }
+
       await loginUser(email, password);
       router.push('/dashboard');
     } catch (err: unknown) {
-      const error = err as { code?: string };
-      console.error('Erro no login:', error);
-
-      // Mapear erros do Firebase para mensagens em português
-      switch (error.code) {
-        case 'auth/invalid-email':
-          setError('Email inválido. Verifique o formato do email.');
-          break;
-        case 'auth/user-disabled':
-          setError('Esta conta foi desabilitada. Entre em contato com o suporte.');
-          break;
-        case 'auth/user-not-found':
-          setError('Usuário não encontrado. Verifique o email ou crie uma conta.');
-          break;
-        case 'auth/wrong-password':
-          setError('Senha incorreta. Tente novamente.');
-          break;
-        case 'auth/too-many-requests':
-          setError('Muitas tentativas de login. Tente novamente mais tarde.');
-          break;
-        case 'auth/network-request-failed':
-          setError('Erro de conexão. Verifique sua internet e tente novamente.');
-          break;
-        default:
-          setError('Erro ao fazer login. Tente novamente.');
+      console.error('Erro completo no login:', err);
+      
+      let errorMessage = 'Erro ao fazer login. Tente novamente.';
+      
+      if (err && typeof err === 'object' && 'code' in err) {
+        const firebaseError = err as { code?: string; message?: string };
+        console.error('Código de erro:', firebaseError.code);
+        console.error('Mensagem:', firebaseError.message);
+        
+        // Mapear erros do Firebase para mensagens em português
+        switch (firebaseError.code) {
+          case 'auth/invalid-email':
+            errorMessage = 'Email inválido. Verifique o formato do email.';
+            break;
+          case 'auth/user-disabled':
+            errorMessage = 'Esta conta foi desabilitada. Entre em contato com o suporte.';
+            break;
+          case 'auth/user-not-found':
+            errorMessage = 'Usuário não encontrado. Verifique o email ou crie uma conta.';
+            break;
+          case 'auth/wrong-password':
+            errorMessage = 'Senha incorreta. Tente novamente.';
+            break;
+          case 'auth/too-many-requests':
+            errorMessage = 'Muitas tentativas de login. Tente novamente mais tarde.';
+            break;
+          case 'auth/network-request-failed':
+            errorMessage = 'Erro de conexão. Verifique sua internet e tente novamente.';
+            break;
+          case 'auth/operation-not-allowed':
+            errorMessage = 'Login com email/senha não está habilitado. Entre em contato com o suporte.';
+            break;
+          case 'auth/invalid-credential':
+            errorMessage = 'Email ou senha inválidos.';
+            break;
+          default:
+            errorMessage = firebaseError.message || 'Erro ao fazer login. Tente novamente.';
+        }
       }
+      
+      setError(errorMessage);
     } finally {
       setLoading(false);
     }
