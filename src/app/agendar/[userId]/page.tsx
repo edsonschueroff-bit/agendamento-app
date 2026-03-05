@@ -3,8 +3,9 @@
 import { useEffect, useState, useCallback } from 'react';
 import { useParams } from 'next/navigation';
 import { Service, BusinessSettings, DayOfWeek, Appointment } from '@/lib/types';
-import { getSubDocuments, getSubDocument, addSubDocument } from '@/lib/firestoreService';
+import { getSubDocuments, getSubDocument, addSubDocument, updateSubDocument } from '@/lib/firestoreService';
 import { Timestamp } from 'firebase/firestore';
+import { generateReschedulingToken, generateReschedulingLink } from '@/lib/reschedulingTokenService';
 
 const DAYS_PT: Record<number, DayOfWeek> = {
     0: 'domingo', 1: 'segunda', 2: 'terca', 3: 'quarta',
@@ -149,6 +150,22 @@ export default function PublicBookingPage() {
                 status: 'agendado',
                 notes: payNow ? '(Solicitou pagamento online)' : '',
             });
+
+            // Gera token de reagendamento
+            const reschedulingToken = generateReschedulingToken(id, userId, 'public');
+            const reschedulingLink = generateReschedulingLink(reschedulingToken);
+
+            // Atualiza agendamento com token
+            await updateSubDocument(
+              'users',
+              userId,
+              'appointments',
+              id,
+              {
+                reschedulingToken,
+                reschedulingExpiresAt: Timestamp.fromDate(new Date(Date.now() + 30 * 24 * 60 * 60 * 1000)),
+              }
+            );
 
             setConfirmedId(id);
 

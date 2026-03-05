@@ -72,6 +72,18 @@ export interface Appointment {
   userId: string;
   createdAt: Timestamp;
   updatedAt: Timestamp;
+  // Campos para reagendamento
+  reschedulingToken?: string; // Token JWT para reagendamento público
+  reschedulingExpiresAt?: Timestamp; // Token expira após 30 dias
+}
+
+// Tipo para token de reagendamento decodificado
+export interface ReschedulingTokenPayload {
+  appointmentId: string;
+  userId: string;
+  clientId: string;
+  iat: number;
+  exp: number;
 }
 
 // Tipos de equipe
