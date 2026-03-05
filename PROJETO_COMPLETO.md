@@ -1091,9 +1091,77 @@ Dados fluem em formato:
   - Usar jsPDF ou similar
   - Estimado: 4-5 horas
 
-### **FUTURO (Após MVP)**
-- [ ] **Fase 9** - Notificações & Reminders (email, SMS)
-- [ ] **Fase 10** - MercadoPago integração completa
+### **DIFERENCIAÇÃO & RECEITA (Semanas 7-12) - Alto Impacto de Negócio**
+
+#### **Tier 1 - Impacto Imediato (Semana 7-8)** ⭐⭐⭐
+- [ ] **Confirmação de Agendamento via WhatsApp** (6-8h)
+  - Integrar Twilio ou WhatsApp Business API
+  - Enviar link de confirmação: "Confirma seu horário? ✅ Sim / ❌ Cancelar"
+  - Reduz no-show em até 60% (dado do mercado)
+  - Implementação: Adicionar `whatsappConfirmation` status em Appointment
+  - **Por quê agora:** Dor imediata do profissional, alta conversão
+
+- [ ] **Reagendamento pelo Cliente** (4-5h)
+  - Link "Reagendar/Cancelar" no e-mail/WhatsApp de confirmação
+  - Abre modal com próximos slots disponíveis
+  - Reduz fricção: cliente não precisa ligar
+  - **Por quê agora:** Melhora experiência, reduz ligações
+
+#### **Tier 2 - Diferenciação vs Trinks/iSalon (Semana 9-10)** ⭐⭐⭐
+- [ ] **Mini Landing Page Pública + Fotos** (5-6h)
+  - Página `/agendar/{userId}` com:
+    - Logo/foto do negócio (upload simples)
+    - Avaliações (★★★★★)
+    - Galeria de fotos do trabalho (antes/depois)
+    - Bio curta do profissional
+  - Aumenta taxa de conversão em ~40%
+  - **Por quê agora:** Diferencial visual vs concorrentes
+
+- [ ] **Área do Cliente (Login Simples)** (8-10h)
+  - Cliente final faz login com telefone/email
+  - Vê seus próximos agendamentos
+  - Vê histórico de serviços + valores
+  - Pode reagendar/cancelar direto
+  - **Por quê agora:** Feature ausente em Trinks, alto diferencial
+
+#### **Tier 3 - Receita Recorrente (Semana 11-12)** ⭐⭐⭐
+- [ ] **Pacotes e Planos de Fidelidade** (6-8h)
+  - Estrutura: `packages/` subcollection
+  - "Compre 10 cortes, ganhe 1 grátis"
+  - "Pacote mensal ilimitado por R$ 150"
+  - Integração com MercadoPago para pré-venda
+  - **Por quê agora:** Receita recorrente = autônomo mais satisfeito
+
+- [ ] **Cupons de Desconto** (4-5h)
+  - Profissional cria cupons (ex: VOLTA10 = 10% off)
+  - Dashboard sugere automaticamente: "12 clientes em risco. Enviar cupom?"
+  - Estrutura: `coupons/` + `couponUsage/` tracking
+  - **Por quê agora:** Reativa clientes dormentes, simples
+
+- [ ] **Relatório MEI em PDF** (3-4h)
+  - Botão "Gerar Relatório Mensal"
+  - PDF com receitas, despesas, lucro
+  - Profissional leva para contador
+  - **Por quê agora:** Profissional paga, low effort, high value
+
+#### **Tier 4 - Otimização de Receita (Semana 13+)**
+- [ ] **Dashboard de Metas** (3-4h)
+  - "Sua meta: R$ 5.000. Você está em 64%"
+  - Gamification simples
+  - Motiva uso diário do app
+
+- [ ] **Lista de Espera (Waitlist)** (4-5h)
+  - Quando slot é cancelado, notificar fila
+  - `waitlist/` subcollection por horário
+
+- [ ] **Múltiplos Serviços por Agendamento** (5-7h)
+  - Cliente agenda: corte + escova + hidratação em 1 slot
+  - Aumenta ticket médio
+  - Mais complexo: requer validação de duração total
+
+### **FUTURO (Após todas acima)**
+- [ ] **Controle de Estoque** (8-10h) - "Coloração consome 50ml de tinta"
+- [ ] **IA para Otimização de Horários** (6-8h) - Bloqueia slots com alto no-show
 - [ ] **Fase 12** - App mobile (React Native)
 - [ ] **Fase 13** - PWA + offline mode
 - [ ] **Fase 14** - Backup automático
@@ -1146,6 +1214,144 @@ Dados fluem em formato:
 
 ---
 
+## 🎯 Estratégia de Produto - Por Que Essa Ordem?
+
+### **O Problema Atual do Seu Público**
+Seus usuários (cabeleireiros, consultórios, studios) têm **2 dores principais:**
+
+1. **Clientes não aparecem** (no-show)
+   - Agendum 40% de no-show é normal no setor
+   - Cada no-show = receita perdida + slot vazio
+   - **Solução:** Confirmação via WhatsApp reduz em até 60%
+
+2. **Perdem clientes para concorrentes**
+   - Trinks, iSalon, Agendor já têm muitas features
+   - Profissional não sabe por onde começar a usar seu app
+   - **Solução:** Mini landing page + Área do cliente (diferenciação visual)
+
+### **A Ordem Importa Porque:**
+
+**Semanas 1-4: Estabilidade** (CRÍTICAS + IMPORTANTES)
+- Corrige bugs que podem quebrar em produção
+- Adiciona testes/monitoramento (você dorme tranquilo)
+- MercadoPago funciona de verdade
+
+**Semanas 5-6: Resolva a Dor (WhatsApp + Reagendamento)**
+- Cliente confirma via WhatsApp = no-show cai ↓
+- Cliente reagenda sem ligar = profissional economiza tempo
+- **Resultado:** Menos ligações, mais receita. Fácil vender isso.
+
+**Semanas 7-8: Diferenciação (Landing page + Área do cliente)**
+- Seu concorrente mostra: "Aqui agenda"
+- Você mostra: Foto bonita + avaliações + galeria + histórico
+- **Resultado:** Taxa de conversão sobe 40%, cliente fica mais engajado
+
+**Semanas 9-10: Receita Recorrente (Pacotes + Cupons)**
+- Profissional consegue vender "Pacote 10 cortes"
+- Você consegue cobrar comissão ou premium
+- **Resultado:** Receita do seu produto cresce, não depende só de ads
+
+**Semanas 11+: Nice-to-have (Metas, Estoque, etc)**
+- Gamification e otimizações que mantêm usuário usando diariamente
+
+### **Por Que Essas 4 de Diferenciação Animam Mais:**
+
+#### **1. Confirmação WhatsApp** (6-8h)
+```
+HOJE:
+Profissional: "Lembrei os 15 clientes por ligação"
+
+AMANHÃ:
+Sistema: Envia automaticamente às 14h do dia anterior
+"Olá Maria! Confirma seu corte amanhã às 14h? ✅ Sim / ❌ Cancelar"
+Maria clica ✅ → Status atualiza em tempo real
+Maria não responde → Profissional vê "aguardando" e liga só se precisar
+```
+
+**Tech:** Twilio SMS API (simples) ou WhatsApp Business API (mais bacana)  
+**Impacto:** No-show cai de 40% para ~15%. Que mudança!
+
+---
+
+#### **2. Reagendamento pelo Cliente** (4-5h)
+```
+HOJE:
+Cliente: "Oi, preciso marcar em outro dia"
+Profissional: Tira do calendário manualmente, agenda de novo
+
+AMANHÃ:
+Email de confirmação tem link: "Precisa reagendar? Clique aqui"
+Cliente clica → Vê próximos 7 dias com horários livres
+Cliente escolhe → Automático, sem profissional fazer nada
+```
+
+**Tech:** Link com token JWT, modal com disponibilidade  
+**Impacto:** Reduz 30 ligações/mês para 5. Profissional consegue atender mais clientes.
+
+---
+
+#### **3. Mini Landing Page + Fotos** (5-6h)
+```
+HOJE:
+Link público é só o formulário branco
+Cliente chega: "Ué, quem é? Por que vou agendar aqui?"
+
+AMANHÃ:
+/agendar/{userId} mostra:
+┌─────────────────────┐
+│  [FOTO NEGÓCIO]     │
+│  Ana Silva - Studio │
+│  ★★★★★ (24 reviews)│
+│ "Cabelo TOP demais!"│
+├─────────────────────┤
+│ [GALERIA FOTOS]     │
+│ Antes/Depois virado │
+│ (12 fotos)          │
+├─────────────────────┤
+│ AGENDAR HORÁRIO     │
+└─────────────────────┘
+```
+
+**Tech:** Novo schema em `BusinessSettings`: `logo`, `bio`, `galleryPhotos`, `reviews`  
+**Impacto:** Taxa de conversão sobe 40%. Cliente sente confiança.
+
+---
+
+#### **4. Área do Cliente (Login Simples)** (8-10h)
+```
+HOJE:
+Cliente agendou, recebeu confirmação. Agora?
+Não sabe horário próximo, não vê histórico, não consegue reagendar
+
+AMANHÃ:
+Login simples (telefone/email)
+Dashboard do cliente:
+├── Próximos agendamentos (com lembretes)
+├── Histórico de serviços (fotos antes/depois)
+├── Valores pagos (recibo)
+├── Botão "Reagendar" / "Cancelar"
+└── Filtro por profissional (se multi-profissional)
+```
+
+**Tech:** Nova collection `clientUsers/` separada de business users  
+**Impacto:** Cliente vira usuário ativo, não vira "fantasma" após agendamento
+
+---
+
+### **Por Que NÃO Fazer Essas Agora?**
+
+❌ **Antes de fazer CRÍTICAS + IMPORTANTES:**
+- Você pode ter bugs em produção e perder usuários
+- Não tem testes = 1 feature nova pode quebrar 3 velhas
+- Sem monitoramento = não sabe quando dá ruim
+
+❌ **Antes de MercadoPago funcionar:**
+- Profissional agenda, cliente não consegue pagar
+- Você vira só agendador, não ganha com pagamentos
+- Marca fica ruim: "App bonito mas não funciona tudo"
+
+---
+
 ## 🎯 Resumo Executivo - Status do Projeto
 
 ### **O que está sólido ✅**
@@ -1173,10 +1379,11 @@ Dados fluem em formato:
 - MercadoPago integração completa (6-8h)
 - reCAPTCHA no booking público (2h)
 
-**VALOR ALTO (Semanas 5-6)** - Evolução de produto
-- Integração WhatsApp Business (6-8h)
-- Sistema de avaliações (4-5h)
-- Export PDF/CSV (4-5h)
+**DIFERENCIAÇÃO & RECEITA (Semanas 7-12)** - Alto impacto de negócio
+- **Tier 1 (Imediato):** Confirmação WhatsApp (6-8h) + Reagendamento cliente (4-5h)
+- **Tier 2 (Diferenciação):** Mini landing page pública (5-6h) + Área do cliente (8-10h)
+- **Tier 3 (Receita recorrente):** Pacotes de fidelidade (6-8h) + Cupons (4-5h) + Relatório MEI (3-4h)
+- **Tier 4 (Otimização):** Dashboard de metas (3-4h) + Lista de espera (4-5h) + Multi-serviços (5-7h)
 
 ### **Gaps Identificados pela Análise Externa**
 1. ❌ Nenhum teste automatizado → Risco em app financeiro
@@ -1186,6 +1393,14 @@ Dados fluem em formato:
 
 ### **Próximo Passo Recomendado**
 Implementar as 4 CRÍTICAS de produção (16-18h de trabalho = ~2 semanas), depois adicionar os 3 IMPORTANTES de qualidade (testing + errors + monitoring) antes de publicidade/marketing.
+
+**Após estabilidade alcançada (fim semana 4):**
+1. **Confirmação WhatsApp** (semana 5) → Reduz no-show imediatamente
+2. **Reagendamento cliente** (semana 5-6) → Diminui fricção
+3. **Mini landing page** (semana 7) → Aumenta conversão
+4. **Área do cliente** (semana 8-9) → Diferencia vs Trinks/iSalon
+
+Essa ordem é **produto**, não código. Cada feature resolve uma dor real do profissional.
 
 ---
 
