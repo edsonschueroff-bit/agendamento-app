@@ -24,7 +24,225 @@ firestore/
 │       │   ├── email: string
 │       │   ├── name: string
 │       │   ├── phone: string
-│       │   ├── avatar: string (URL)
+│       │   ├── avatar: string (---
+
+## 🧪 Estratégia de Testes
+
+### **Necessidade Crítica**
+Um aplicativo financeiro onde bugs podem exibir valores errados para clientes requer testes automatizados. Recomendação: cobertura mínima de 60% em helpers críticos.
+
+### **Escopo Recomendado (MVP de testes)**
+
+**1. Testes de Helpers de Data** (3-4 horas)
+```typescript
+// src/lib/__tests__/helpers.test.ts
+describe('ensureTimestamp', () => {
+  test('converts string YYYY-MM-DD to Timestamp');
+  test('returns Timestamp if already Timestamp');
+  test('handles null/undefined gracefully');
+  test('throws on invalid date format');
+});
+
+describe('timestampToDate', () => {
+  test('converts Timestamp to Date');
+  test('returns null if input is null');
+  test('maintains timezone correctness (pt-BR)');
+});
+```
+
+**2. Testes de Cálculos Financeiros** (3-4 horas)
+```typescript
+// src/lib/__tests__/financial.test.ts
+describe('Financial Calculations', () => {
+  test('calculates total revenue correctly');
+  test('calculates total expenses correctly');
+  test('calculates profit margin correctly');
+  test('handles edge case: zero revenue');
+  test('handles edge case: only expenses, no revenue');
+  test('ticket médio calculation is accurate');
+});
+```
+
+**3. Testes de Validação de Agendamento** (2-3 horas)
+```typescript
+// src/lib/__tests__/appointment.test.ts
+describe('Appointment Validation', () => {
+  test('rejects conflicting time slots');
+  test('rejects appointments outside business hours');
+  test('rejects appointments on holidays');
+  test('accepts valid appointment');
+});
+```
+
+### **Stack de Testes**
+- **Jest** - Framework (já instalado via Next.js)
+- **React Testing Library** - Para componentes (opcional, mas recomendado)
+- **Mock Firebase** - Para testes sem conectar a DB real
+
+### **Implementação**
+- Estimado: **8-10 horas** (incluindo setup inicial)
+- Prioridade: **IMPORTANTE** (após as críticas de produção)
+- Quando: Após batched writes estar implementado
+
+---
+
+## 💳 Status da Integração MercadoPago
+
+### **Situação Atual**
+A documentação menciona "SDK pronto" mas há clareza importante:
+
+✅ **O que está implementado:**
+- SDK do MercadoPago incluído no projeto
+- Step 4 do agendamento público exibe "Link Pagamento"
+- Estrutura de transações no Firestore existe
+
+❌ **O que NÃO está implementado:**
+- Nenhuma chamada real ao MercadoPago API
+- Nenhum webhook configurado para confirmar pagamentos
+- Status de transação não atualiza automaticamente
+- Cliente vê link mas clique não leva a lugar nenhum
+
+### **Implicação para Usuário Final**
+Atualmente, o agendamento público **não tem pagamento ativo**. Um cliente que completa o agendamento não é redirecionado para pagar. Isso deve estar explícito na UI ou desabilitado até estar pronto.
+
+### **Roadmap de Implementação**
+- **Fase IMPORTANTE (Semana 4):** Integração MercadoPago completa
+  - Criar access token com credenciais de produção/sandbox
+  - Implementar chamada na etapa de pagamento
+  - Configurar webhooks para `payment.created`, `payment.confirmed`
+  - Atualizar status da transação em tempo real
+  - Exibir confirmação clara para cliente
+  - Estimado: 6-8 horas
+
+---
+
+## 🚨 Tratamento de Erros e Error Boundaries
+
+### **Gaps Atuais**
+O projeto não menciona como erros são tratados:
+- Erros do Firestore são "engolidos" silenciosamente?
+- Como usuário sabe se agendamento foi criado?
+- Qual feedback recebe se perde conexão?
+
+### **Implementação Recomendada**
+
+**1. Error Boundary (React)** (2-3 horas)
+```typescript
+// src/components/ErrorBoundary.tsx
+export class ErrorBoundary extends React.Component {
+  // Captura erros em renderização
+  // Exibe fallback UI elegante
+  // Envia erro para Sentry
+}
+
+// Em layout.tsx:
+<ErrorBoundary>
+  <AuthProvider>
+    {children}
+  </AuthProvider>
+</ErrorBoundary>
+```
+
+**2. API Error Handler** (2 horas)
+```typescript
+// src/lib/errorHandler.ts
+async function handleFirestoreError(error: any, context: string) {
+  // Log estruturado (Sentry)
+  // Toast para usuário (explicação em português)
+  // Retry automático em casos específicos
+  // Fallback gracioso
+}
+
+// Em pages:
+try {
+  await addSubDocument(...)
+} catch (error) {
+  await handleFirestoreError(error, 'criar-agendamento');
+}
+```
+
+**3. Toast Notifications** (1-2 horas)
+- Feedback visual em português para cada ação
+- Success: "Agendamento criado com sucesso!"
+- Error: "Erro ao criar agendamento. Tente novamente"
+- Loading: "Salvando agendamento..."
+
+### **Estimado:** 5-7 horas (prioridade: IMPORTANTE)
+
+---
+
+## 📊 Monitoramento e Observabilidade em Produção
+
+### **Por que é crítico**
+Quando um erro acontece na aplicação de um cliente real em produção, você precisa saber:
+- O que aconteceu?
+- Qual usuário foi afetado?
+- Em qual página/funcionalidade?
+- Com qual frequência ocorre?
+
+Sem monitoramento, você descobre apenas se o cliente ligar reclamando.
+
+### **Solução Recomendada**
+
+**1. Sentry (Error Tracking)** (4-5 horas)
+```bash
+npm install @sentry/nextjs
+```
+
+```typescript
+// sentry.client.config.ts
+import * as Sentry from "@sentry/nextjs";
+
+Sentry.init({
+  dsn: process.env.NEXT_PUBLIC_SENTRY_DSN,
+  environment: process.env.NODE_ENV,
+  tracesSampleRate: 0.1,
+});
+
+// Em pages problemáticas:
+try {
+  await deleteClient(...)
+} catch (error) {
+  Sentry.captureException(error, {
+    tags: { userId, action: 'delete-client' }
+  });
+}
+```
+
+**Dashboard Sentry oferece:**
+- 📍 Rastreamento de todos os erros
+- 👤 Identificação de qual usuário teve problema
+- 📈 Gráficos de frequência
+- 🔔 Alertas em tempo real (quando novos erros aparecem)
+- 🔍 Stack trace completo para debugar
+
+**2. Firebase Crashlytics** (2-3 horas - alternativa)
+```typescript
+// Já integrado se Firebase Cloud Functions for usado
+import { initializeAppCheck } from 'firebase/app-check';
+
+// Log estruturado:
+logEvent('appointment_created', {
+  userId,
+  clientId,
+  serviceId,
+  timestamp: new Date()
+});
+```
+
+**3. Custom Analytics** (2 horas)
+```typescript
+// Métricas de negócio:
+// - Quantos agendamentos/dia
+// - Taxa de sucesso de criação
+// - Tempo médio de carregamento da UI
+// - Taxa de erro por funcionalidade
+```
+
+### **Estimado:** 6-8 horas (prioridade: IMPORTANTE, após críticas)
+### **Recomendação:** Comece com Sentry (mais simples, mais barato)
+
+---)
 │       │   └── createdAt: Timestamp
 │       │
 │       ├── settings/
@@ -832,13 +1050,14 @@ Dados fluem em formato:
 
 - [ ] **FieldValue.increment() nos Contadores** - Atomicidade
   - Atualizar `Client.totalSpent` e `totalAppointments` com `increment()`
-  - Evitar desincronização quando fallhas de conexão
+  - Evitar desincronização quando falhas de conexão
   - Estimado: 2-3 horas
 
-- [ ] **Batched Writes nas Deleções** - Integridade transacional
+- [ ] **Batched Writes nas Deleções** - Integridade transacional (PRIORIDADE)
   - Deletar cliente + histórico + agendamentos em uma transação
-  - Evitar corrupção de dados
+  - Evitar corrupção de dados em produção
   - Estimado: 2-3 horas
+  - **Motivo:** Corrupção de dados é mais urgente que performance
 
 - [ ] **Remover Dados Duplicados em Appointments** - Normalização
   - Remover `clientName`, `clientPhone`, `serviceName` do appointment
@@ -927,9 +1146,53 @@ Dados fluem em formato:
 
 ---
 
-**Última atualização:** Março 4, 2026 (Correções críticas de Timestamp)  
-**Status:** ✅ Production Ready (com recomendações de melhorias)  
+## 🎯 Resumo Executivo - Status do Projeto
+
+### **O que está sólido ✅**
+- Arquitetura TypeScript com tipos rigorosamente enforçados
+- Modelo de dados Firestore bem estruturado
+- CRUD funcional para todas as entidades principais
+- Autenticação Firebase integrada
+- Dashboard com análises e gráficos
+- Agendamento público com step-by-step wizard
+- UI responsiva com Tailwind CSS
+- **CRÍTICO RESOLVIDO:** Timestamps padronizados (eliminou root cause de bugs)
+
+### **Roadmap de Produção Priorizado**
+
+**CRÍTICAS (Próximas 2 semanas)** - Risco de corrupção/performance
+1. Paginação nas listagens (4-5h)
+2. FieldValue.increment() atômico (2-3h)
+3. **Batched Writes em deleções** (2-3h) ⭐ Reordenado para antes
+4. Normalização de appointments (6-8h)
+
+**IMPORTANTES (Semanas 3-4)** - Risco de segurança/experiência
+- Testes unitários (8-10h) - Risco financeiro real
+- Error Boundaries + tratamento de erros (5-7h)
+- Monitoramento (Sentry/Crashlytics) (6-8h)
+- MercadoPago integração completa (6-8h)
+- reCAPTCHA no booking público (2h)
+
+**VALOR ALTO (Semanas 5-6)** - Evolução de produto
+- Integração WhatsApp Business (6-8h)
+- Sistema de avaliações (4-5h)
+- Export PDF/CSV (4-5h)
+
+### **Gaps Identificados pela Análise Externa**
+1. ❌ Nenhum teste automatizado → Risco em app financeiro
+2. ❌ MercadoPago "ready" mas não funciona → Confunde usuários
+3. ❌ Sem error handling visível → Erros silenciosos
+4. ❌ Sem observabilidade → Impossível debugar em produção
+
+### **Próximo Passo Recomendado**
+Implementar as 4 CRÍTICAS de produção (16-18h de trabalho = ~2 semanas), depois adicionar os 3 IMPORTANTES de qualidade (testing + errors + monitoring) antes de publicidade/marketing.
+
+---
+
+**Última atualização:** Março 4, 2026 (v2 - Feedback do analista integrado)  
+**Status:** ✅ Sólido com roadmap realista (não é "production ready" até CRÍTICAS + IMPORTANTES)  
 **Build:** ✅ Passing (13 rotas, 0 TS errors, 12.5s)  
+**Recomendação de Deploy:** Após implementar 4 CRÍTICAS mínimo  
 **Commits recentes:** 
 - "CRÍTICO: Padronizar todos os dates para SEMPRE usar Timestamp"
 - "UI: Melhorar contraste de campos de entrada com bordas visíveis e texto preto forte"
