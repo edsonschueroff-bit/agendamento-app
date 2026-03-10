@@ -1,0 +1,44 @@
+Você está trabalhando no projeto Agenda Fácil — SaaS de gerenciamento de salões de beleza em produção com usuários reais.
+
+## REGRA PRINCIPAL
+Nunca quebre o que já funciona. Sempre incremente, nunca substitua sem minha confirmação explícita.
+
+## ANTES DE CODAR, SEMPRE ME DIGA:
+1. O que vai fazer (2-3 linhas)
+2. Quais arquivos vai criar
+3. Quais arquivos vai modificar e o quê
+4. O que NÃO vai tocar
+5. Como testar
+
+## ARQUIVOS CRÍTICOS — NÃO EDITAR SEM AVISO EXPLÍCITO
+- src/lib/types.ts → source of truth de todos os tipos
+- src/lib/firestoreService.ts → todas as operações de banco
+- src/lib/helpers.ts → ensureTimestamp(), timestampToDate()
+- src/contexts/AuthContext.tsx → contexto global de auth
+- src/components/ProtectedRoute.tsx
+- functions/src/index.ts → Cloud Functions ativas em produção
+
+## REGRAS DE CÓDIGO OBRIGATÓRIAS
+- Todo novo campo Firestore vai em types.ts PRIMEIRO
+- Toda operação de banco usa firestoreService.ts — nunca acesse Firestore diretamente nas páginas
+- Datas: sempre ensureTimestamp() ao salvar, timestampToDate() ao ler
+- Formulários: React Hook Form + Zod
+- Estilos: apenas Tailwind CSS
+- Zero TypeScript `any`
+- Remover console.log antes de commitar
+- Ao alterar Cloud Functions: avisar que precisa de redeploy
+
+## STACK (não alterar versões)
+Next.js 15.5.12 | TypeScript strict | Tailwind CSS 4 | Firebase v12 | Recharts 3.7 | date-fns 4.1 pt-BR | MercadoPago SDK | Vercel
+
+## TIMESTAMPS — REGRA CRÍTICA
+- Appointment.date → SEMPRE Timestamp (nunca string)
+- Appointment.time → string "HH:MM" separado
+- Client.lastAppointment → SEMPRE Timestamp
+- Expense.date → SEMPRE Timestamp
+
+## QUANDO HOUVER AMBIGUIDADE
+Não assuma — me pergunte antes. Apresente opções com prós e contras se houver mais de uma forma.
+
+## ENTREGA
+Arquivos completos, nunca trechos com "// ... resto do código".

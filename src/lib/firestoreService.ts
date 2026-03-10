@@ -15,13 +15,16 @@ import {
   QuerySnapshot,
   DocumentSnapshot,
   writeBatch,
+  runTransaction,
   serverTimestamp,
   Timestamp,
   WhereFilterOp,
   Query,
   CollectionReference,
+  increment,
 } from 'firebase/firestore';
 import { db } from './firebase';
+import type { Appointment } from './types';
 
 // Tipos básicos
 export interface FirestoreDocument {
@@ -188,6 +191,106 @@ export const deleteSubDocument = async (
 };
 
 // Função para adicionar documento em subcoleção
+export const commitDeleteBatches = async (
+  documentPaths: string[],
+  maxOperationsPerBatch = 450
+): Promise<void> => {
+  try {
+    for (let index = 0; index < documentPaths.length; index += maxOperationsPerBatch) {
+      const batch = writeBatch(db);
+      const batchPaths = documentPaths.slice(index, index + maxOperationsPerBatch);
+
+      batchPaths.forEach((documentPath) => {
+        batch.delete(doc(db, documentPath));
+      });
+
+      await batch.commit();
+    }
+  } catch (error) {
+    console.error('Erro ao executar delecoes em lote:', error);
+    throw error;
+  }
+};
+
+export const deleteClientCascade = async (
+  userId: string,
+  clientId: string
+): Promise<void> => {
+  try {
+    const appointmentsQuery = query(
+      collection(db, 'users', userId, 'appointments'),
+      where('clientId', '==', clientId)
+    );
+    const clientHistoryRef = collection(db, 'users', userId, 'clients', clientId, 'clientHistory');
+
+    const [appointmentsSnapshot, clientHistorySnapshot] = await Promise.all([
+      getDocs(appointmentsQuery),
+      getDocs(clientHistoryRef),
+    ]);
+
+    const documentPaths = [
+      ...appointmentsSnapshot.docs.map((snapshot) => snapshot.ref.path),
+      ...clientHistorySnapshot.docs.map((snapshot) => snapshot.ref.path),
+      `users/${userId}/clients/${clientId}`,
+    ];
+
+    await commitDeleteBatches(documentPaths);
+  } catch (error) {
+    console.error('Erro ao excluir cliente em cascata:', error);
+    throw error;
+  }
+};
+
+export const deleteAppointmentWithTransaction = async (
+  userId: string,
+  appointmentId: string
+): Promise<void> => {
+  try {
+    await runTransaction(db, async (transaction) => {
+      const appointmentRef = doc(db, 'users', userId, 'appointments', appointmentId);
+      const appointmentSnapshot = await transaction.get(appointmentRef);
+
+      if (!appointmentSnapshot.exists()) {
+        throw new Error('AGENDAMENTO_NAO_ENCONTRADO');
+      }
+
+      const appointmentData = {
+        id: appointmentSnapshot.id,
+        ...appointmentSnapshot.data(),
+      } as Appointment;
+
+      transaction.delete(appointmentRef);
+
+      if (!appointmentData.clientId) {
+        return;
+      }
+
+      const clientRef = doc(db, 'users', userId, 'clients', appointmentData.clientId);
+      const clientSnapshot = await transaction.get(clientRef);
+
+      if (!clientSnapshot.exists()) {
+        return;
+      }
+
+      const appointmentPrice =
+        typeof appointmentData.price === 'number'
+          ? appointmentData.price
+          : typeof appointmentData.servicePrice === 'number'
+            ? appointmentData.servicePrice
+            : 0;
+
+      transaction.update(clientRef, {
+        totalAppointments: increment(-1),
+        totalSpent: increment(-appointmentPrice),
+        updatedAt: serverTimestamp(),
+      });
+    });
+  } catch (error) {
+    console.error('Erro ao excluir agendamento com transacao:', error);
+    throw error;
+  }
+};
+
 export const addSubDocument = async <T extends FirestoreDocument>(
   parentCollection: string,
   parentId: string,

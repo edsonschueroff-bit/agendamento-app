@@ -7,7 +7,7 @@ import { useRouter } from 'next/navigation';
 import { useAuthContext } from '@/components/providers/AuthProvider';
 import AuthenticatedLayout from '@/components/layout/AuthenticatedLayout';
 import { Client } from '@/lib/types';
-import { getSubDocuments, addSubDocument, updateSubDocument, deleteSubDocument, getDocuments } from '@/lib/firestoreService';
+import { getSubDocuments, addSubDocument, updateSubDocument, deleteClientCascade, getDocuments } from '@/lib/firestoreService';
 import { Appointment } from '@/lib/types';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale/pt-BR';
@@ -164,7 +164,7 @@ export default function ClientesPage() {
     if (!confirm('Tem certeza que deseja excluir este cliente?')) return;
 
     try {
-      await deleteSubDocument('users', user!.uid, 'clients', clientId);
+      await deleteClientCascade(user!.uid, clientId);
       loadClients();
       setMessage({ type: 'success', text: 'Cliente excluído com sucesso!' });
       setTimeout(() => setMessage(null), 3000);

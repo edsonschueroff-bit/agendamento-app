@@ -6,14 +6,14 @@ import { useEffect, useState, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuthContext } from '@/components/providers/AuthProvider';
 import AuthenticatedLayout from '@/components/layout/AuthenticatedLayout';
-import { Appointment, Client, Service } from '@/lib/types';
-import { getSubDocuments, addSubDocument, updateSubDocument } from '@/lib/firestoreService';
+import { Appointment, Client, Service, Professional } from '@/lib/types';
+import { deleteAppointmentWithTransaction, getSubDocuments } from '@/lib/firestoreService';
 import { Timestamp } from 'firebase/firestore';
 import { Calendar, dateFnsLocalizer } from 'react-big-calendar';
 import { format, parse, startOfWeek, getDay } from 'date-fns';
 import { ptBR } from 'date-fns/locale/pt-BR';
 import 'react-big-calendar/lib/css/react-big-calendar.css';
-import { removeAppointment } from '@/modules/agenda/agendaService';
+import { createAppointment, editAppointment } from '@/modules/agenda/agendaService';
 
 const locales = {
   'pt-BR': ptBR,
@@ -35,6 +35,7 @@ export default function AgendamentosPage() {
   const [appointments, setAppointments] = useState<Appointment[]>([]);
   const [clients, setClients] = useState<Client[]>([]);
   const [services, setServices] = useState<Service[]>([]);
+  const [professionals, setProfessionals] = useState<Professional[]>([]);
 
   // Estados para filtros e view
   const [filterDate, setFilterDate] = useState('');
@@ -49,6 +50,7 @@ export default function AgendamentosPage() {
   const [formData, setFormData] = useState({
     clientId: '',
     serviceId: '',
+    professionalId: '',
     date: '',
     time: '',
     status: 'agendado' as 'agendado' | 'confirmado' | 'concluido' | 'cancelado',
@@ -65,13 +67,17 @@ export default function AgendamentosPage() {
 
     setIsLoading(true);
     try {
-      const clientsData = await getSubDocuments<Client>('users', user.uid, 'clients');
-      const servicesData = await getSubDocuments<Service>('users', user.uid, 'services');
-      const appointmentsData = await getSubDocuments<Appointment>('users', user.uid, 'appointments');
+      const [clientsData, servicesData, appointmentsData, professionalsData] = await Promise.all([
+        getSubDocuments<Client>('users', user.uid, 'clients'),
+        getSubDocuments<Service>('users', user.uid, 'services'),
+        getSubDocuments<Appointment>('users', user.uid, 'appointments'),
+        getSubDocuments<Professional>('users', user.uid, 'professionals'),
+      ]);
 
       setClients(clientsData);
       setServices(servicesData);
       setAppointments(appointmentsData);
+      setProfessionals(professionalsData.filter(p => p.isActive));
     } catch (error) {
       console.error('Erro ao carregar dados:', error);
     } finally {
@@ -99,7 +105,7 @@ export default function AgendamentosPage() {
   });
 
   // Helper function to convert various date formats to Date object
-  const getDateObject = (dateValue: any): Date => {
+  const getDateObject = (dateValue: Date | string | { toDate?: () => Date } | null | undefined): Date => {
     if (dateValue instanceof Date) {
       return dateValue;
     }
@@ -137,6 +143,7 @@ export default function AgendamentosPage() {
       setFormData({
         clientId: appointment.clientId,
         serviceId: appointment.serviceId,
+        professionalId: appointment.professionalId ?? '',
         date: date.toISOString().split('T')[0],
         time: date.toTimeString().slice(0, 5),
         status: appointment.status,
@@ -147,6 +154,7 @@ export default function AgendamentosPage() {
       setFormData({
         clientId: '',
         serviceId: '',
+        professionalId: '',
         date: '',
         time: '',
         status: 'agendado',
@@ -170,29 +178,44 @@ export default function AgendamentosPage() {
       const selectedService = services.find(s => s.id === formData.serviceId);
 
       if (!selectedClient || !selectedService) {
-        console.error('Cliente ou serviço não encontrado:', { clientId: formData.clientId, serviceId: formData.serviceId });
-        throw new Error('Cliente ou serviço não encontrado');
+        console.error('Cliente ou servico nao encontrado:', { clientId: formData.clientId, serviceId: formData.serviceId });
+        throw new Error('Cliente ou servico nao encontrado');
       }
 
       const dateTime = new Date(`${formData.date}T${formData.time}`);
+      const selectedProfessional = formData.professionalId
+        ? professionals.find(p => p.id === formData.professionalId)
+        : null;
       const appointmentData = {
         clientId: formData.clientId,
         clientName: selectedClient.name,
+        clientPhone: selectedClient.phone || '',
         serviceId: formData.serviceId,
         serviceName: selectedService.name,
         servicePrice: selectedService.price,
-        date: formData.date, // YYYY-MM-DD string
+        price: selectedService.price,
+        date: Timestamp.fromDate(dateTime),
         time: formData.time,
-        dateTime: Timestamp.fromDate(dateTime),
+        duration: selectedService.duration,
         status: formData.status,
         notes: formData.notes,
-        userId: user!.uid
+        userId: user!.uid,
+        ...(selectedProfessional && {
+          professionalId: selectedProfessional.id,
+          professionalName: selectedProfessional.name,
+        }),
       };
 
       if (editingAppointment) {
-        await updateSubDocument('users', user!.uid, 'appointments', editingAppointment.id!, appointmentData);
+        const result = await editAppointment(user!.uid, editingAppointment.id!, appointmentData);
+        if (!result.success) {
+          throw new Error(typeof result.error === 'string' ? result.error : 'ERRO_AO_ATUALIZAR');
+        }
       } else {
-        await addSubDocument('users', user!.uid, 'appointments', appointmentData);
+        const result = await createAppointment(user!.uid, appointmentData);
+        if (!result.success) {
+          throw new Error(typeof result.error === 'string' ? result.error : 'ERRO_AO_CRIAR');
+        }
       }
 
       closeModal();
@@ -205,9 +228,9 @@ export default function AgendamentosPage() {
       const isConflict = errMsg === 'CONFLITO_DE_HORARIO';
       const isOutOfHours = errMsg === 'FORA_DO_HORARIO';
       const text = isConflict
-        ? 'Já existe um agendamento para este horário. Escolha outro horário.'
+        ? 'Ja existe um agendamento para este horario. Escolha outro horario.'
         : isOutOfHours
-          ? 'Este horário está fora do seu horário de atendimento. Ajuste em Configurações.'
+          ? 'Este horario esta fora do seu horario de atendimento. Ajuste em Configuracoes.'
           : 'Erro ao salvar agendamento. Verifique os dados e tente novamente.';
       setMessage({ type: 'error', text });
       setTimeout(() => setMessage(null), 5000);
@@ -222,8 +245,7 @@ export default function AgendamentosPage() {
     }
 
     try {
-      const result = await removeAppointment(user!.uid, appointmentId);
-      if (!result.success) throw new Error(result.error as string);
+      await deleteAppointmentWithTransaction(user!.uid, appointmentId);
 
       loadData();
       setMessage({ type: 'success', text: 'Agendamento excluído com sucesso!' });
@@ -243,7 +265,7 @@ export default function AgendamentosPage() {
     }
   };
 
-  const formatDateTime = (dateValue: any) => {
+  const formatDateTime = (dateValue: Date | string | { toDate?: () => Date } | null | undefined) => {
     const date = getDateObject(dateValue);
     return {
       date: date.toLocaleDateString('pt-BR'),
@@ -631,6 +653,24 @@ export default function AgendamentosPage() {
                       </select>
                     </div>
 
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        Profissional
+                      </label>
+                      <select
+                        value={formData.professionalId}
+                        onChange={(e) => setFormData({ ...formData, professionalId: e.target.value })}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      >
+                        <option value="">Nenhum</option>
+                        {professionals.map((p) => (
+                          <option key={p.id} value={p.id}>
+                            {p.name} ({p.specialty})
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+
                     <div className="grid grid-cols-2 gap-4">
                       <div>
                         <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -730,3 +770,6 @@ export default function AgendamentosPage() {
     </AuthenticatedLayout>
   );
 }
+
+
+

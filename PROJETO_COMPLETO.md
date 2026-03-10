@@ -88,90 +88,56 @@ describe('Appointment Validation', () => {
 
 ## 💳 Status da Integração MercadoPago
 
-### **Situação Atual**
-A documentação menciona "SDK pronto" mas há clareza importante:
+### **Situação Atual (Março 2026)**
+✅ **O que já está implementado:**
+- SDK oficial do Mercado Pago integrado (`mercadopago`)
+- Variável de ambiente `MERCADO_PAGO_ACCESS_TOKEN` configurada no projeto
+- API route `POST /api/mercadopago/preference` com validação via Zod
+- Criação real de preferência de pagamento e retorno de `init_point`
+- Botão "Pagar com Mercado Pago" no agendamento público com redirecionamento automático
+- `back_urls` configuradas para `success`, `failure` e `pending`
 
-✅ **O que está implementado:**
-- SDK do MercadoPago incluído no projeto
-- Step 4 do agendamento público exibe "Link Pagamento"
-- Estrutura de transações no Firestore existe
-
-❌ **O que NÃO está implementado:**
-- Nenhuma chamada real ao MercadoPago API
-- Nenhum webhook configurado para confirmar pagamentos
-- Status de transação não atualiza automaticamente
-- Cliente vê link mas clique não leva a lugar nenhum
+⚠️ **O que ainda está pendente:**
+- Webhook para confirmação assíncrona de pagamento
+- Persistência e conciliação de status de pagamento no Firestore
+- Fluxo de pós-pagamento completo (atualização automática do agendamento/transação)
+- Páginas finais de retorno de pagamento (`/agendar/confirmado`, `/agendar/erro`, `/agendar/pendente`)
 
 ### **Implicação para Usuário Final**
-Atualmente, o agendamento público **não tem pagamento ativo**. Um cliente que completa o agendamento não é redirecionado para pagar. Isso deve estar explícito na UI ou desabilitado até estar pronto.
+O cliente já consegue ser redirecionado para o checkout do Mercado Pago.  
+A confirmação final do pagamento ainda não volta automaticamente para o sistema, pois o webhook e a conciliação ainda não foram implementados.
 
-### **Roadmap de Implementação**
-- **Fase IMPORTANTE (Semana 4):** Integração MercadoPago completa
-  - Criar access token com credenciais de produção/sandbox
-  - Implementar chamada na etapa de pagamento
-  - Configurar webhooks para `payment.created`, `payment.confirmed`
-  - Atualizar status da transação em tempo real
-  - Exibir confirmação clara para cliente
-  - Estimado: 6-8 horas
+### **Roadmap de Finalização**
+- Implementar webhook de pagamentos do Mercado Pago
+- Registrar transação e status no Firestore
+- Sincronizar status do agendamento após `approved`/`rejected`
+- Criar páginas finais de retorno e feedback claro ao cliente
+- Estimado: 4-6 horas (parte restante)
 
 ---
 
 ## 🚨 Tratamento de Erros e Error Boundaries
 
-### **Gaps Atuais**
-O projeto não menciona como erros são tratados:
-- Erros do Firestore são "engolidos" silenciosamente?
-- Como usuário sabe se agendamento foi criado?
-- Qual feedback recebe se perde conexão?
+### **Status Atual (Março 2026)**
+✅ **Melhorias já aplicadas:**
+- Login e registro com mapeamento de erros do Firebase para mensagens em português
+- `useAuth` com timeout de inicialização e fallback para evitar loading infinito
+- `try/catch` em fluxos críticos (agendamento público, reagendamento, dashboard)
+- Componente `ErrorBoundary` criado em `src/components/ErrorBoundary.tsx`
 
-### **Implementação Recomendada**
+⚠️ **Pendências:**
+- Integrar `ErrorBoundary` no layout global
+- Centralizar tratamento de erro em um handler reutilizável
+- Padronizar feedback de sucesso/erro/carregamento para todas as telas
 
-**1. Error Boundary (React)** (2-3 horas)
-```typescript
-// src/components/ErrorBoundary.tsx
-export class ErrorBoundary extends React.Component {
-  // Captura erros em renderização
-  // Exibe fallback UI elegante
-  // Envia erro para Sentry
-}
-
-// Em layout.tsx:
-<ErrorBoundary>
-  <AuthProvider>
-    {children}
-  </AuthProvider>
-</ErrorBoundary>
-```
-
-**2. API Error Handler** (2 horas)
-```typescript
-// src/lib/errorHandler.ts
-async function handleFirestoreError(error: any, context: string) {
-  // Log estruturado (Sentry)
-  // Toast para usuário (explicação em português)
-  // Retry automático em casos específicos
-  // Fallback gracioso
-}
-
-// Em pages:
-try {
-  await addSubDocument(...)
-} catch (error) {
-  await handleFirestoreError(error, 'criar-agendamento');
-}
-```
-
-**3. Toast Notifications** (1-2 horas)
-- Feedback visual em português para cada ação
-- Success: "Agendamento criado com sucesso!"
-- Error: "Erro ao criar agendamento. Tente novamente"
-- Loading: "Salvando agendamento..."
-
-### **Estimado:** 5-7 horas (prioridade: IMPORTANTE)
+### **Esforço restante estimado:** 3-5 horas
 
 ---
 
 ## 📊 Monitoramento e Observabilidade em Produção
+
+### **Status Atual**
+❌ Sentry/Crashlytics ainda não integrados.
 
 ### **Por que é crítico**
 Quando um erro acontece na aplicação de um cliente real em produção, você precisa saber:
@@ -286,10 +252,22 @@ logEvent('appointment_created', {
 │       │       ├── serviceId: string (referência para services)
 │       │       ├── serviceName: string
 │       │       ├── price: number
-│       │       ├── date: Timestamp | string (YYYY-MM-DD)
+│       │       ├── date: Timestamp
 │       │       ├── time: string (HH:MM)
-│       │       ├── status: "agendado" | "confirmado" | "cancelado" | "concluído"
+│       │       ├── professionalId?: string
+│       │       ├── professionalName?: string
+│       │       ├── status: "agendado" | "confirmado" | "concluido" | "cancelado"
 │       │       ├── notes: string
+│       │       └── createdAt: Timestamp
+│       │
+│       ├── professionals/          # Profissionais (cadastro simples)
+│       │   └── {professionalId}/
+│       │       ├── name: string
+│       │       ├── phone: string
+│       │       ├── specialty: string
+│       │       ├── commissionRate: number (0-100)
+│       │       ├── isActive: boolean
+│       │       ├── serviceIds?: string[] (IDs de services que realiza)
 │       │       └── createdAt: Timestamp
 │       │
 │       ├── clients/                # Base de clientes
@@ -302,11 +280,11 @@ logEvent('appointment_created', {
 │       │       ├── zipCode: string
 │       │       ├── totalSpent: number
 │       │       ├── totalAppointments: number
-│       │       ├── lastAppointment: Timestamp | string
+│       │       ├── lastAppointment: Timestamp
 │       │       ├── joinedAt: Timestamp
 │       │       └── clientHistory/  # Histórico de agendamentos
 │       │           └── {historyId}/
-│       │               ├── date: Timestamp | string
+│       │               ├── date: Timestamp
 │       │               ├── service: string
 │       │               ├── price: number
 │       │               └── status: string
@@ -320,7 +298,7 @@ logEvent('appointment_created', {
 │       │       ├── description: string
 │       │       ├── amount: number (R$)
 │       │       ├── category: "material" | "aluguel" | "salário" | "outro"
-│       │       ├── date: Timestamp | string (YYYY-MM-DD)
+│       │       ├── date: Timestamp
 │       │       ├── paymentMethod: "dinheiro" | "débito" | "crédito" | "PIX"
 │       │       └── createdAt: Timestamp
 │       │
@@ -885,13 +863,16 @@ match /users/{userId} {
 |--------|------|--------------|-----------------|
 | **Dashboard** | `/dashboard` | ✅ Obrigatório | Cards de resumo, próximos agendamentos, stats |
 | **Agendamentos** | `/agendamentos` | ✅ Obrigatório | Calendário, CRUD, filtros, lista |
-| **Novo Agendamento** | `/agendar/novo` | ✅ Obrigatório | Formulário step-by-step, validação |
-| **Agendamento Público** | `/agendar/{userId}` | ❌ Público | Step-by-step, link compartilhável |
+| **Agendamento Público** | `/agendar/{userId}` | ❌ Público | Step-by-step com seleção de profissional + serviço filtrado, link compartilhável |
+| **Reagendamento Público** | `/agendar/reagendar/{token}` | ❌ Público | Reagendamento com token e slots dinâmicos |
+| **Confirmação Reagendamento** | `/agendar/confirmacao-reagendamento` | ❌ Público | Feedback de sucesso após reagendamento |
 | **Clientes** | `/clientes` | ✅ Obrigatório | CRUD clientes, histórico, stats |
 | **Serviços** | `/servicos` | ✅ Obrigatório | CRUD serviços, preços, duração |
 | **Financeiro** | `/financeiro` | ✅ Obrigatório | Receita, despesas, lucro, charts, CRUD expenses |
 | **Análises** | `/analises` | ✅ Obrigatório | 4 dashboards, rankings, tendências, 6 meses |
 | **Configurações** | `/configuracoes` | ✅ Obrigatório | 4 abas, horários, feriados, notificações, políticas |
+| **Dashboard do Profissional (visão do dono)** | `/profissional/dashboard` | ✅ Dono | Seleciona profissional + período, lista de atendimentos e total em comissões |
+| **Gerenciar Profissionais** | `/profissional/gerenciar` | ✅ Dono | CRUD simples (Firestore) + ativar/desativar + vínculo de serviços |
 | **Login** | `/login` | ❌ Público | Email/senha |
 | **Registro** | `/register` | ❌ Público | Email/senha |
 
@@ -912,7 +893,7 @@ match /users/{userId} {
 ### **Backend / Banco de Dados**
 - **Firebase v12.0.0** - Autenticação + Firestore
 - **@firebase/firestore 4.9.0** - SDK modular
-- **Firebase Cloud Functions** - Functions serverless (opcional)
+- **Firebase Cloud Functions** - Functions ativas para disponibilidade e reagendamento (gestão de profissionais via Functions foi descontinuada no frontend)
 
 ### **Payment**
 - **MercadoPago SDK** - Integração de pagamentos
@@ -1019,7 +1000,32 @@ Dados fluem em formato:
 ### **Fase 8 - Agendamento Público ✓**
 - Link compartilhável
 - Step-by-step wizard
-- MercadoPago ready
+- MercadoPago com criação de preferência e redirect para checkout
+- Geração de `reschedulingToken` e validade de 30 dias
+
+### **Fase 9 - Reagendamento do Cliente ✓**
+- Página pública `/agendar/reagendar/{token}`
+- Cloud Functions para carregar dados e validar disponibilidade
+- Atualização do agendamento por token (sem login)
+- Página de confirmação de reagendamento
+
+### **Fase 10 - Módulo Profissional ✓**
+- **Cadastro simples (Firestore):** profissionais são documentos em `users/{userId}/professionals/{professionalId}` (sem login separado, sem Cloud Functions)
+- `Professional` (inclui `serviceIds?: string[]` para vincular serviços), `ProfessionalLink` e `Commission` permanecem no projeto para referência/uso futuro
+- `/profissional/gerenciar` (dono): CRUD + ativar/desativar + seleção de serviços que realiza
+- `/profissional/dashboard` (dono): seleciona profissional + período (este mês / mês anterior) e vê atendimentos e comissões (baseado em `Appointment.price` e `Professional.commissionRate`)
+- **Observação:** Cloud Functions `createProfessional`/`deactivateProfessional` existem no repositório, mas estão **ignoradas** no fluxo atual (não deletar)
+
+### **Atualização - Profissional em Agendamentos ✓**
+- `Appointment` suporta `professionalId?: string` e `professionalName?: string` (opcionais, retrocompatível)
+- `/agendamentos` (interno): select opcional de profissional no modal de criar/editar agendamento
+- `/agendar/{userId}` (público): novo Step 1 (profissional, com opção \"Sem preferência\") e Step 2 filtra serviços por `Professional.serviceIds` (com fallback quando não configurado)
+
+### **Fase 11 - PWA e Notificações Web (Base) ✓**
+- `manifest.json` + ícones PWA
+- Registro de Service Worker em produção
+- Banner para solicitar permissão de notificações
+- Integração inicial com Firebase Messaging (token VAPID + listener)
 
 ### **Fase CRÍTICA - Correções de Produção ✓ (03 Mar 2026)**
 - ✅ **Padronizar Timestamps** - Eliminar `date: Timestamp | string`
@@ -1036,7 +1042,7 @@ Dados fluem em formato:
 - ✅ Atualizado tipo `ClientHistory` interface separada
 - ✅ Atualizado `BusinessSettings` com `publicUrl`
 - ✅ Corrigidos tipos em 4 páginas: agendamentos, agendar, dashboard, financeiro
-- ✅ **Build Status:** 12.5s, 13 rotas, 0 TS errors
+- ✅ **Build Status atualizado (09 Mar 2026):** compilação em 27.9s, 17 rotas (incluindo API), 0 erros de TypeScript
 
 ---
 
@@ -1097,14 +1103,14 @@ Dados fluem em formato:
 - [✅] **Reagendamento pelo Cliente** (4-5h) - IMPLEMENTADO ✓
   - Link "Reagendar/Cancelar" no e-mail/WhatsApp de confirmação
   - Abre página com próximos 7 dias + horários disponíveis
-  - Token JWT válido por 30 dias
+  - Token seguro válido por 30 dias
   - Reduz fricção: cliente não precisa ligar
   - **Implementação:** 
     - `reschedulingTokenService.ts` com geração/validação de tokens
     - Página `/agendar/reagendar/[token]` para seleção de data/hora
     - Página `/agendar/confirmacao-reagendamento` para confirmação
     - handleBooking automático gera token ao criar agendamento
-  - **Status:** ✅ Production Ready (14.5s build, 0 TS errors, 16 rotas)
+  - **Status:** ✅ Production Ready (build atualizado em 09/03/2026: 27.9s, 0 TS errors, 17 rotas)
 
 - [ ] **Confirmação de Agendamento via WhatsApp** (6-8h)
   - Integrar Twilio ou WhatsApp Business API
@@ -1291,7 +1297,7 @@ Cliente clica → Vê próximos 7 dias com horários livres
 Cliente escolhe → Automático, sem profissional fazer nada
 ```
 
-**Tech:** Link com token JWT, modal com disponibilidade  
+**Tech:** Link com token seguro + disponibilidade dinâmica  
 **Impacto:** Reduz 30 ligações/mês para 5. Profissional consegue atender mais clientes.
 
 ---
@@ -1369,10 +1375,7 @@ Adicionada funcionalidade completa de reagendamento sem que o cliente precise li
 ```
 Cliente agenda agendamento
 ↓
-Sistema gera token JWT com:
-- appointmentId
-- userId
-- clientId
+Sistema gera token seguro (random/base64url)
 - Expira em 30 dias
 ↓
 Token armazenado em Appointment.reschedulingToken
@@ -1389,7 +1392,7 @@ https://agenda-facil.com/agendar/reagendar/{TOKEN}"
 ```
 Cliente clica no link
 ↓
-Validação do token (expireza, assinatura)
+Validação do token (existência e expiração)
 ↓
 Exibe página com:
 - Detalhes do agendamento atual
@@ -1413,20 +1416,20 @@ Confirmação com novo horário
 **Modificados:**
 - `src/lib/types.ts` - Novos campos em `Appointment`
 - `src/app/agendar/[userId]/page.tsx` - Geração automática de token
+- `functions/src/index.ts` - Functions `getReschedulingData` e `rescheduleWithToken`
 
 ### **Campos Adicionados em Appointment:**
 ```typescript
-reschedulingToken?: string;           // Token JWT
+reschedulingToken?: string;           // Token seguro para link público
 reschedulingExpiresAt?: Timestamp;    // Expira em 30 dias
 ```
 
 ### **Validação de Token:**
 ```typescript
-// Token deve conter:
-- appointmentId (válido)
-- userId (corresponder ao profissional)
-- clientId (corresponder ao cliente)
-- Não estar expirado (30 dias max)
+// Validação feita nas Cloud Functions:
+- Encontrar appointment por reschedulingToken (collectionGroup)
+- Validar expiração em reschedulingExpiresAt
+- Validar disponibilidade antes de atualizar data/hora
 ```
 
 ### **Como Integrar com Email:**
@@ -1453,6 +1456,9 @@ Adicionar link no template de confirmação do agendamento:
 - Autenticação Firebase integrada
 - Dashboard com análises e gráficos
 - Agendamento público com step-by-step wizard
+- Reagendamento público por token com validação server-side
+- Módulo de profissionais com papéis `dono` e `profissional`
+- Base de PWA e notificações push já conectada no frontend
 - UI responsiva com Tailwind CSS
 - **CRÍTICO RESOLVIDO:** Timestamps padronizados (eliminou root cause de bugs)
 
@@ -1466,9 +1472,9 @@ Adicionar link no template de confirmação do agendamento:
 
 **IMPORTANTES (Semanas 3-4)** - Risco de segurança/experiência
 - Testes unitários (8-10h) - Risco financeiro real
-- Error Boundaries + tratamento de erros (5-7h)
+- Finalizar Error Boundary global + handler central de erros (3-5h)
 - Monitoramento (Sentry/Crashlytics) (6-8h)
-- MercadoPago integração completa (6-8h)
+- Finalizar MercadoPago (webhook + status transacional) (4-6h)
 - reCAPTCHA no booking público (2h)
 
 **DIFERENCIAÇÃO & RECEITA (Semanas 7-12)** - Alto impacto de negócio
@@ -1479,8 +1485,8 @@ Adicionar link no template de confirmação do agendamento:
 
 ### **Gaps Identificados pela Análise Externa**
 1. ❌ Nenhum teste automatizado → Risco em app financeiro
-2. ❌ MercadoPago "ready" mas não funciona → Confunde usuários
-3. ❌ Sem error handling visível → Erros silenciosos
+2. ⚠️ MercadoPago parcial (checkout ok, sem webhook/status automático)
+3. ⚠️ Tratamento de erro parcial (login/registro e fluxos críticos melhorados, sem handler central)
 4. ❌ Sem observabilidade → Impossível debugar em produção
 
 ### **Próximo Passo Recomendado**
@@ -1496,12 +1502,15 @@ Essa ordem é **produto**, não código. Cada feature resolve uma dor real do pr
 
 ---
 
-**Última atualização:** Março 4, 2026 (v3 - Reagendamento do Cliente Implementado)  
-**Status:** ✅ Sólido com 1ª feature de diferenciação em produção  
-**Build:** ✅ Passing (14.5s, 16 rotas, 0 TS errors)  
-**Recomendação de Deploy:** Após implementar 4 CRÍTICAS mínimo  
-**Commits recentes:** 
-- "Feature: Adicionar reagendamento pelo cliente com token JWT"
-- "Docs: Adicionar roadmap de diferenciação de produto"
-- "Docs: Integrar feedback do analista"
-- "CRÍTICO: Padronizar todos os dates para SEMPRE usar Timestamp"
+**Última atualização:** Março 9, 2026 (v5 - profissionais via Firestore + profissional no agendamento público)  
+**Status:** ✅ MVP sólido com agendamento público + reagendamento + gestão de profissionais (Firestore) + checkout Mercado Pago ativo  
+**Build:** ✅ Passing (`npm run build` OK, 0 erros de TypeScript)  
+**Recomendação de Deploy:** Concluir webhook do MercadoPago + observabilidade mínima antes de escalar tráfego  
+**Entregas recentes:** 
+- Checkout Mercado Pago via `/api/mercadopago/preference`
+- Cloud Functions para disponibilidade e reagendamento com token
+- Profissionais via Firestore (`users/{userId}/professionals`) com ativação/inativação e vínculo de serviços (`serviceIds`)
+- `/agendamentos`: campo opcional de profissional no modal (salva `professionalId`/`professionalName` no agendamento)
+- `/agendar/{userId}`: novo Step 1 (profissional + \"Sem preferência\") e Step 2 filtra serviços por profissional (com fallback)
+- Rotas `/profissional/gerenciar` e `/profissional/dashboard` como visão do dono (sem login separado de profissional)
+- Base de PWA + push notifications no frontend

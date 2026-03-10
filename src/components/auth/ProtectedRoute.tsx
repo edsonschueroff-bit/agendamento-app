@@ -7,20 +7,27 @@ import { useAuthContext } from '@/components/providers/AuthProvider';
 interface ProtectedRouteProps {
   children: React.ReactNode;
   redirectTo?: string;
+  requiredUserType?: 'dono' | 'profissional';
 }
 
-export default function ProtectedRoute({ 
-  children, 
-  redirectTo = '/login' 
+export default function ProtectedRoute({
+  children,
+  redirectTo = '/login',
+  requiredUserType,
 }: ProtectedRouteProps) {
-  const { loading, isAuthenticated } = useAuthContext();
+  const { loading, isAuthenticated, userType } = useAuthContext();
   const router = useRouter();
 
   useEffect(() => {
-    if (!loading && !isAuthenticated) {
-      router.push(redirectTo);
+    if (!loading) {
+      if (!isAuthenticated) {
+        router.push(redirectTo);
+      } else if (requiredUserType && userType !== requiredUserType) {
+        const fallbackUrl = userType === 'profissional' ? '/profissional/dashboard' : '/dashboard';
+        router.push(fallbackUrl);
+      }
     }
-  }, [loading, isAuthenticated, router, redirectTo]);
+  }, [loading, isAuthenticated, userType, router, redirectTo, requiredUserType]);
 
   if (loading) {
     return (
@@ -30,9 +37,9 @@ export default function ProtectedRoute({
     );
   }
 
-  if (!isAuthenticated) {
-    return null; // Será redirecionado pelo useEffect
+  if (!isAuthenticated || (requiredUserType && userType !== requiredUserType)) {
+    return null;
   }
 
   return <>{children}</>;
-} 
+}

@@ -6,8 +6,11 @@ import { AuthUser, logoutUser } from '@/lib/authService';
 
 interface AuthContextType {
   user: AuthUser | null;
+  userType: 'dono' | 'profissional' | null;
   loading: boolean;
   isAuthenticated: boolean;
+  isDono: boolean;
+  isProfessional: boolean;
   logout: () => Promise<void>;
 }
 
@@ -35,7 +38,14 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   };
 
   return (
-    <AuthContext.Provider value={{ ...auth, logout }}>
+    <AuthContext.Provider
+      value={{
+        ...auth,
+        isDono: auth.userType === 'dono',
+        isProfessional: auth.userType === 'profissional',
+        logout,
+      }}
+    >
       {children}
     </AuthContext.Provider>
   );

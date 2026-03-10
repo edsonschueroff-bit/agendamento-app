@@ -1,14 +1,21 @@
 'use client';
 
+import type { ReactNode } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useAuthContext } from '@/components/providers/AuthProvider';
 
+interface NavItem {
+  name: string;
+  href: string;
+  icon: ReactNode;
+}
+
 export default function Sidebar({ onMobileItemClick }: { onMobileItemClick?: () => void }) {
   const pathname = usePathname();
-  const { user, logout } = useAuthContext();
+  const { user, logout, userType, isDono } = useAuthContext();
 
-  const navigation = [
+  const ownerNavigation: NavItem[] = [
     {
       name: 'Dashboard',
       href: '/dashboard',
@@ -65,26 +72,49 @@ export default function Sidebar({ onMobileItemClick }: { onMobileItemClick?: () 
         </svg>
       ),
     },
+    {
+      name: 'Profissionais',
+      href: '/profissional/gerenciar',
+      icon: (
+        <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
+        </svg>
+      ),
+    },
   ];
 
+  const professionalNavigation: NavItem[] = [
+    {
+      name: 'Meu Painel',
+      href: '/profissional/dashboard',
+      icon: (
+        <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2H5a2 2 0 00-2-2z" />
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 5a2 2 0 012-2h4a2 2 0 012 2v6H8V5z" />
+        </svg>
+      ),
+    },
+  ];
+
+  const navigation = userType === 'profissional' ? professionalNavigation : ownerNavigation;
+  const homeHref = userType === 'profissional' ? '/profissional/dashboard' : '/dashboard';
+
   const isActive = (href: string) => {
-    if (href === '/dashboard') {
-      return pathname === '/dashboard';
+    if (href === '/dashboard' || href === '/profissional/dashboard') {
+      return pathname === href;
     }
     return pathname.startsWith(href);
   };
 
   return (
     <div className="flex flex-col h-full bg-gray-800 text-white">
-      {/* Logo */}
       <div className="flex items-center justify-center h-16 px-4 border-b border-gray-700">
-        <Link href="/dashboard" className="flex items-center space-x-2" onClick={onMobileItemClick}>
+        <Link href={homeHref} className="flex items-center space-x-2" onClick={onMobileItemClick}>
           <svg className="w-8 h-8 text-blue-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
           </svg>
           <span className="text-xl font-bold">Agenda Fácil</span>
         </Link>
-        {/* Botão de Fechar (visível só no mobile) */}
         <button
           onClick={onMobileItemClick}
           className="md:hidden text-gray-400 hover:text-white ml-auto"
@@ -95,7 +125,6 @@ export default function Sidebar({ onMobileItemClick }: { onMobileItemClick?: () 
         </button>
       </div>
 
-      {/* Navigation */}
       <nav className="flex-1 px-4 py-6 space-y-2">
         {navigation.map((item) => (
           <Link
@@ -113,7 +142,6 @@ export default function Sidebar({ onMobileItemClick }: { onMobileItemClick?: () 
         ))}
       </nav>
 
-      {/* User Info & Logout */}
       <div className="p-4 border-t border-gray-700">
         <div className="flex items-center space-x-3 mb-3">
           <div className="w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center">
@@ -124,6 +152,9 @@ export default function Sidebar({ onMobileItemClick }: { onMobileItemClick?: () 
           <div className="flex-1 min-w-0">
             <p className="text-sm font-medium text-white truncate">
               {user?.email || 'Usuário'}
+            </p>
+            <p className="text-xs text-gray-400">
+              {isDono ? 'Dono' : 'Profissional'}
             </p>
           </div>
         </div>
@@ -139,4 +170,5 @@ export default function Sidebar({ onMobileItemClick }: { onMobileItemClick?: () 
       </div>
     </div>
   );
-} 
+}
+

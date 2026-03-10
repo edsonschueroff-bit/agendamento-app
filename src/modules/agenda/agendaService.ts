@@ -1,8 +1,6 @@
 import { addSubDocument, getSubDocuments, updateSubDocument, deleteSubDocument, getSubDocument } from '@/lib/firestoreService';
 import { Appointment, Service, BusinessSettings, DayOfWeek } from '@/lib/types';
 import { Timestamp } from 'firebase/firestore';
-import { db } from '../../lib/firestoreService';
-import { collection, addDoc, query, where, getDocs } from 'firebase/firestore';
 
 // Map JS getDay() (0=Sun) to DayOfWeek keys
 const JS_DAY_MAP: DayOfWeek[] = ['domingo', 'segunda', 'terca', 'quarta', 'quinta', 'sexta', 'sabado'];
@@ -148,6 +146,11 @@ export const editAppointment = async (
         const startTime = newDate.toDate();
         const endTime = new Date(startTime.getTime() + duration * 60000);
 
+        const withinHours = await checkBusinessHours(userId, startTime);
+        if (!withinHours) {
+          return { success: false, error: 'FORA_DO_HORARIO', message: 'Este horario esta fora do seu horario de atendimento configurado.' };
+        }
+
         const hasConflict = await checkConflict(userId, startTime, endTime, appointmentId);
         if (hasConflict) {
           return { success: false, error: 'CONFLITO_DE_HORARIO', message: 'Já existe um agendamento para este horário.' };
@@ -179,51 +182,5 @@ export const removeAppointment = async (userId: string, appointmentId: string) =
   }
 };
 
-export const createAppointmentFirestore = async (appointmentData: { clientId: string; serviceId: string; date: string; time: string; [key: string]: unknown }) => {
-  try {
-    // converter date + time para Timestamp e garantir campo date string (YYYY-MM-DD)
-    const dateString = appointmentData.date;
-    const dateTime = new Date(`${appointmentData.date}T${appointmentData.time}`);
-    const dateTimestamp = Timestamp.fromDate(dateTime);
 
-    const docData = {
-      ...appointmentData,
-      date: dateString,
-      dateTime: dateTimestamp,
-      createdAt: Timestamp.now(),
-      updatedAt: Timestamp.now(),
-    };
 
-    const newAppointment = await addDoc(collection(db, 'appointments'), docData);
-    return { success: true, id: newAppointment.id };
-  } catch (error) {
-    console.error('Error creating appointment:', error);
-    return { success: false, error };
-  }
-};
-
-export const listAppointmentsFirestore = async (filters: { date?: string; clientId?: string; }) => {
-  try {
-    // filtrar por o campo `date` (YYYY-MM-DD) — isso assume que os documentos gravam `date` como string
-    let q = query(collection(db, 'appointments'));
-
-    if (filters.date) {
-      q = query(q, where('date', '==', filters.date));
-    }
-
-    if (filters.clientId) {
-      q = query(q, where('clientId', '==', filters.clientId));
-    }
-
-    const snapshot = await getDocs(q);
-    const appointments = snapshot.docs
-      .map(doc => ({ id: doc.id, ...(doc.data() as { clientId?: string; serviceId?: string; date?: string; time?: string; dateTime?: Timestamp; }) }))
-      // garantir que possua os campos esperados
-      .filter((appointment): appointment is { id: string; clientId: string; serviceId: string; dateTime: Timestamp } => !!(appointment.clientId && appointment.serviceId && appointment.dateTime));
-
-    return { success: true, appointments };
-  } catch (error) {
-    console.error('Error listing appointments:', error);
-    return { success: false, error };
-  }
-};

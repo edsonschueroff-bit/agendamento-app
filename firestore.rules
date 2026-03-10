@@ -1,48 +1,95 @@
-rules_version = '2';
+﻿rules_version = '2';
 
 service cloud.firestore {
   match /databases/{database}/documents {
+    function isAuthenticated() {
+      return request.auth != null;
+    }
 
-    // Regra global: bloquear tudo por padrão
+    function isOwner(userId) {
+      return isAuthenticated() && request.auth.uid == userId;
+    }
+
+    function professionalLinkPath() {
+      return /databases/$(database)/documents/professionalLinks/$(request.auth.uid);
+    }
+
+    function isLinkedProfessionalOf(ownerId) {
+      return isAuthenticated()
+        && exists(professionalLinkPath())
+        && get(professionalLinkPath()).data.ownerId == ownerId;
+    }
+
     match /{document=**} {
       allow read, write: if false;
     }
 
-    match /users/{userId} {
-      // Somente o dono autenticado acessa seus próprios dados
-      allow read, write: if request.auth != null && request.auth.uid == userId;
+    match /professionalLinks/{professionalId} {
+      allow read: if isAuthenticated() && request.auth.uid == professionalId;
+      allow create: if isAuthenticated()
+        && request.resource.data.ownerId == request.auth.uid;
+      allow update, delete: if false;
+    }
 
-      // PÁGINA PÚBLICA: leitura de serviços e configurações (sem autenticação)
+    match /users/{userId} {
+      allow read, write: if isOwner(userId);
+
       match /services/{serviceId} {
         allow read: if true;
-        allow write: if request.auth != null && request.auth.uid == userId;
+        allow write: if isOwner(userId);
       }
 
-      match /settings/{doc} {
+      match /settings/business {
         allow read: if true;
-        allow write: if request.auth != null && request.auth.uid == userId;
+        allow write: if isOwner(userId);
       }
 
-      // PÁGINA PÚBLICA: leitura de agendamentos (apenas data/endTime para verificar disponibilidade)
-      // e criação de novos agendamentos por clientes
+      match /settings/{docId} {
+        allow read, write: if isOwner(userId);
+      }
+
       match /appointments/{appointmentId} {
-        allow read: if request.auth != null && request.auth.uid == userId
-          || resource == null; // nunca deixará ler dados, só a query pública abaixo
-        allow read: if true; // necessário para verificar conflitos de horário na página pública
+        allow read: if isOwner(userId) || isLinkedProfessionalOf(userId);
+
         allow create: if
-          // Campos obrigatórios devem estar presentes
-          request.resource.data.keys().hasAll(['clientName', 'serviceId', 'serviceName', 'date', 'userId', 'status'])
-          // userId deve ser o profissional correto
-          && request.resource.data.userId == userId
-          // Status inicial deve ser 'agendado'
-          && request.resource.data.status == 'agendado';
-        allow update, delete: if request.auth != null && request.auth.uid == userId;
+          request.resource.data.keys().hasAll([
+            'clientName',
+            'serviceId',
+            'serviceName',
+            'date',
+            'userId',
+            'status'
+          ]) &&
+          request.resource.data.userId == userId &&
+          request.resource.data.status == 'agendado' &&
+          (
+            !request.resource.data.keys().hasAny(['reschedulingToken']) ||
+            request.resource.data.reschedulingToken is string
+          ) &&
+          (
+            !request.resource.data.keys().hasAny(['reschedulingExpiresAt']) ||
+            request.resource.data.reschedulingExpiresAt is timestamp
+          );
+
+        allow update, delete: if isOwner(userId);
       }
 
-      // Subcoleções privadas do profissional (clientes, financeiro, etc)
+      match /professionals/{professionalId} {
+        allow read: if isOwner(userId)
+          || (isAuthenticated() && request.auth.uid == professionalId && isLinkedProfessionalOf(userId));
+        allow write: if isOwner(userId);
+
+        match /commissions/{commissionId} {
+          allow read: if isOwner(userId)
+            || (isAuthenticated() && request.auth.uid == professionalId && isLinkedProfessionalOf(userId));
+          allow write: if isOwner(userId);
+        }
+      }
+
       match /{subcollection}/{document=**} {
-        allow read, write: if request.auth != null && request.auth.uid == userId;
+        allow read, write: if isOwner(userId);
       }
     }
   }
 }
+

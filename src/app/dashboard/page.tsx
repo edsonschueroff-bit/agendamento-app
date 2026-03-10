@@ -31,7 +31,7 @@ interface TodayAppointment {
 import NotificationManager from '@/components/notifications/NotificationManager';
 
 export default function DashboardPage() {
-  const { user, loading, isAuthenticated } = useAuthContext();
+  const { user, loading, isAuthenticated, userType } = useAuthContext();
   const router = useRouter();
   const [stats, setStats] = useState<DashboardStats>({
     todayAppointments: 0,
@@ -45,10 +45,14 @@ export default function DashboardPage() {
   const [monthlyRevenue, setMonthlyRevenue] = useState<{ month: string; receita: number }[]>([]);
 
   useEffect(() => {
-    if (!loading && !isAuthenticated) {
-      router.push('/login');
+    if (!loading) {
+      if (!isAuthenticated) {
+        router.push('/login');
+      } else if (userType === 'profissional') {
+        router.push('/profissional/dashboard');
+      }
     }
-  }, [loading, isAuthenticated, router]);
+  }, [loading, isAuthenticated, userType, router]);
 
   const loadDashboardData = useCallback(async () => {
     if (!user?.uid) return;
@@ -171,12 +175,13 @@ export default function DashboardPage() {
     );
   }
 
-  if (!isAuthenticated) {
+  if (!isAuthenticated || userType === 'profissional') {
     return null;
   }
 
   return (
     <AuthenticatedLayout>
+      <NotificationManager />
       {/* Header */}
       <header className="bg-white shadow">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">

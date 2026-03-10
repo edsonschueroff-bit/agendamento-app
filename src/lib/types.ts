@@ -8,6 +8,60 @@ export interface User {
   photoURL?: string;
   createdAt: Timestamp;
   updatedAt: Timestamp;
+  // Para profissionais
+  userType?: 'dono' | 'profissional'; // Tipo de usuário no sistema
+}
+
+// ============================================
+// PROFISSIONAIS - CADASTRO SIMPLES (FIRESTORE)
+// ============================================
+
+/**
+ * Professional: Dados do profissional na subcollection users/{ownerId}/professionals/{professionalId}
+ * Cadastro simples — sem login separado, apenas documento no Firestore.
+ */
+export interface Professional {
+  id?: string;
+  name: string;
+  phone: string;
+  specialty: string;        // ex: "Coloração", "Corte", "Manicure"
+  commissionRate: number;   // percentual ex: 40 (significa 40%)
+  isActive: boolean;
+  createdAt: Timestamp;
+  serviceIds?: string[];    // IDs dos serviços que este profissional realiza
+}
+
+/**
+ * ProfessionalLink: Mapping entre profissional e dono
+ * Stored at: professionalLinks/{professionalUid}
+ * Permite profissional saber qual é seu dono
+ */
+export interface ProfessionalLink {
+  id?: string;
+  ownerId: string; // UID do dono (usuário que criou)
+  createdAt: Timestamp;
+}
+
+/**
+ * Commission: Comissão gerada automaticamente quando agendamento é concluído
+ * Stored at: users/{ownerId}/professionals/{professionalId}/commissions/{commissionId}
+ */
+export interface Commission {
+  id?: string;
+  appointmentId: string; // Referência do agendamento
+  professionalId: string; // UID do profissional
+  clientId: string; // UID do cliente
+  serviceId: string; // UID do serviço
+  serviceName: string;
+  appointmentDate: Timestamp; // Data do agendamento
+  appointmentValue: number; // Valor total do agendamento
+  commissionRate: number; // Percentual da comissão
+  commissionValue: number; // Valor calculado (appointmentValue * commissionRate / 100)
+  status: 'pendente' | 'pago'; // Status do pagamento
+  paymentDate?: Timestamp; // Quando foi pago
+  notes?: string;
+  createdAt: Timestamp;
+  updatedAt?: Timestamp;
 }
 
 // Tipos de cliente
@@ -72,6 +126,9 @@ export interface Appointment {
   userId: string;
   createdAt: Timestamp;
   updatedAt: Timestamp;
+  // Profissional (opcional)
+  professionalId?: string;
+  professionalName?: string;
   // Campos para reagendamento
   reschedulingToken?: string; // Token JWT para reagendamento público
   reschedulingExpiresAt?: Timestamp; // Token expira após 30 dias
