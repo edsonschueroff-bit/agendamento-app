@@ -102,6 +102,23 @@ export default function FinanceiroPage() {
     return { start, end };
   }, [periodFilter, customDateRange]);
 
+  const getChartLabel = useCallback(() => {
+    switch (periodFilter) {
+      case 'hoje':
+        return 'Hoje';
+      case 'semana':
+        return 'Semana';
+      case 'mes':
+        return 'Mes';
+      case 'ano':
+        return 'Ano';
+      case 'customizado':
+        return 'Periodo';
+      default:
+        return 'Periodo';
+    }
+  }, [periodFilter]);
+
   const loadFinancialData = useCallback(async () => {
     if (!user?.uid) return;
     setIsLoading(true);
@@ -120,38 +137,39 @@ export default function FinanceiroPage() {
         undefined, 'date', 'desc'
       );
 
-      const now = new Date();
-      const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
-
-      const completed = appointments.filter(a => a.status === 'concluido');
-
-      const totalRevenue = completed.reduce((sum, a) => sum + (a.servicePrice || 0), 0);
-      const monthlyRevenue = completed
-        .filter(a => {
-          const d = a.date?.toDate?.();
-          return d && d >= start && d <= end;
-        })
-        .reduce((sum, a) => sum + (a.servicePrice || 0), 0);
-
-      const totalExpenses = expensesData.reduce((sum, e) => sum + (e.amount || 0), 0);
-      const monthlyExpenses = expensesData
-        .filter(e => {
-          const d = e.date?.toDate?.();
-          return d && d >= start && d <= end;
-        })
-        .reduce((sum, e) => sum + (e.amount || 0), 0);
-
-      setFinancialStats({
-        totalRevenue,
-        monthlyRevenue,
-        totalExpenses,
-        monthlyExpenses,
-        netProfit: totalRevenue - totalExpenses,
-        totalAppointments: appointments.length,
-        completedAppointments: completed.length,
+      const periodAppointments = appointments.filter((appointment) => {
+        const date = appointment.date?.toDate?.();
+        return Boolean(date && date >= start && date <= end);
+      });
+      const periodCompletedAppointments = periodAppointments.filter((appointment) => appointment.status === 'concluido');
+      const periodExpenses = expensesData.filter((expense) => {
+        const date = expense.date?.toDate?.();
+        return Boolean(date && date >= start && date <= end);
       });
 
-      const paymentEntries: PaymentEntry[] = appointments.slice(0, 50).map(apt => ({
+      const periodRevenue = periodCompletedAppointments.reduce((sum, appointment) => sum + (appointment.servicePrice || 0), 0);
+      const periodExpensesTotal = periodExpenses.reduce((sum, expense) => sum + (expense.amount || 0), 0);
+      const periodNetProfit = periodRevenue - periodExpensesTotal;
+
+      setFinancialStats({
+        totalRevenue: periodRevenue,
+        monthlyRevenue: periodRevenue,
+        totalExpenses: periodExpensesTotal,
+        monthlyExpenses: periodExpensesTotal,
+        netProfit: periodNetProfit,
+        totalAppointments: periodAppointments.length,
+        completedAppointments: periodCompletedAppointments.length,
+      });
+      setChartData([
+        {
+          name: getChartLabel(),
+          receitas: periodRevenue,
+          despesas: periodExpensesTotal,
+          lucro: periodNetProfit,
+        },
+      ]);
+
+      const paymentEntries: PaymentEntry[] = periodCompletedAppointments.slice(0, 50).map(apt => ({
         id: apt.id || '',
         clientName: apt.clientName || 'Cliente',
         serviceName: apt.serviceName || 'Serviço',
@@ -161,13 +179,21 @@ export default function FinanceiroPage() {
       }));
 
       setPayments(paymentEntries);
-      setExpenses(expensesData);
+      setExpenses(periodExpenses);
     } catch (error) {
       console.error('Erro ao carregar dados financeiros:', error);
+      setChartData([
+        {
+          name: getChartLabel(),
+          receitas: 0,
+          despesas: 0,
+          lucro: 0,
+        },
+      ]);
     } finally {
       setIsLoading(false);
     }
-  }, [user?.uid, getPeriodDateRange]);
+  }, [user?.uid, getPeriodDateRange, getChartLabel]);
 
   useEffect(() => {
     if (isAuthenticated && user?.uid) {
@@ -315,15 +341,15 @@ export default function FinanceiroPage() {
             <h2 className="text-3xl font-black text-gray-900">
               R$ {financialStats.totalRevenue.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
             </h2>
-            <p className="text-xs text-green-600 mt-2 font-bold uppercase tracking-wider">Acumulado Total</p>
+            <p className="text-xs text-green-600 mt-2 font-bold uppercase tracking-wider">Período Selecionado</p>
           </div>
 
           <div className="bg-gradient-to-br from-red-50 to-white p-6 rounded-3xl border border-red-100 shadow-sm">
-            <p className="text-sm font-bold text-gray-500 mb-1">Gastos Totais</p>
+            <p className="text-sm font-bold text-gray-500 mb-1">Gastos do Período</p>
             <h2 className="text-3xl font-black text-gray-900">
               R$ {financialStats.totalExpenses.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
             </h2>
-            <p className="text-xs text-red-600 mt-2 font-bold uppercase tracking-wider">Custo Operacional</p>
+            <p className="text-xs text-red-600 mt-2 font-bold uppercase tracking-wider">Período Selecionado</p>
           </div>
 
           <div className="bg-gradient-to-br from-blue-600 to-blue-700 p-6 rounded-3xl shadow-lg border border-blue-500">
@@ -408,7 +434,7 @@ export default function FinanceiroPage() {
               <div className="p-6 border-b border-gray-50 flex justify-between items-center bg-gray-50/50">
                 <h3 className="font-black text-gray-900">Histórico de Recebimentos</h3>
                 <span className="text-xs font-bold text-gray-500 bg-white px-3 py-1 rounded-full shadow-sm">
-                  Mostrando últimos {payments.length} agendamentos
+                  Mostrando últimos {payments.length} recebimentos concluídos
                 </span>
               </div>
               <div className="overflow-x-auto">

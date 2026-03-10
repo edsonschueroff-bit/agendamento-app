@@ -97,9 +97,22 @@ export default function AgendamentosPage() {
     }
   }, [isAuthenticated, user?.uid, loadData]);
 
+  const formatDateForInput = (date: Date): string => {
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  };
+
   const filteredAppointments = appointments.filter(appointment => {
     const matchesDate = !filterDate ||
-      new Date(appointment.date instanceof Date ? appointment.date : typeof appointment.date === 'string' ? appointment.date : appointment.date.toDate()).toISOString().split('T')[0] === filterDate;
+      formatDateForInput(
+        appointment.date instanceof Date
+          ? appointment.date
+          : typeof appointment.date === 'string'
+            ? new Date(appointment.date)
+            : appointment.date.toDate()
+      ) === filterDate;
     const matchesClient = !filterClient || appointment.clientId === filterClient;
     return matchesDate && matchesClient;
   });
@@ -144,7 +157,7 @@ export default function AgendamentosPage() {
         clientId: appointment.clientId,
         serviceId: appointment.serviceId,
         professionalId: appointment.professionalId ?? '',
-        date: date.toISOString().split('T')[0],
+        date: formatDateForInput(date),
         time: date.toTimeString().slice(0, 5),
         status: appointment.status,
         notes: appointment.notes || ''
@@ -209,12 +222,34 @@ export default function AgendamentosPage() {
       if (editingAppointment) {
         const result = await editAppointment(user!.uid, editingAppointment.id!, appointmentData);
         if (!result.success) {
-          throw new Error(typeof result.error === 'string' ? result.error : 'ERRO_AO_ATUALIZAR');
+          const errMsg = typeof result.error === 'string' ? result.error : 'ERRO_AO_ATUALIZAR';
+          const isConflict = errMsg === 'CONFLITO_DE_HORARIO';
+          const isOutOfHours = errMsg === 'FORA_DO_HORARIO';
+          const text = isConflict
+            ? 'Ja existe um agendamento para este horario. Escolha outro horario.'
+            : isOutOfHours
+              ? 'Este horario esta fora do seu horario de atendimento. Ajuste em Configuracoes.'
+              : 'Erro ao atualizar agendamento. Verifique os dados e tente novamente.';
+
+          setMessage({ type: 'error', text });
+          setTimeout(() => setMessage(null), 5000);
+          return;
         }
       } else {
         const result = await createAppointment(user!.uid, appointmentData);
         if (!result.success) {
-          throw new Error(typeof result.error === 'string' ? result.error : 'ERRO_AO_CRIAR');
+          const errMsg = typeof result.error === 'string' ? result.error : 'ERRO_AO_CRIAR';
+          const isConflict = errMsg === 'CONFLITO_DE_HORARIO';
+          const isOutOfHours = errMsg === 'FORA_DO_HORARIO';
+          const text = isConflict
+            ? 'Ja existe um agendamento para este horario. Escolha outro horario.'
+            : isOutOfHours
+              ? 'Este horario esta fora do seu horario de atendimento. Ajuste em Configuracoes.'
+              : 'Erro ao criar agendamento. Verifique os dados e tente novamente.';
+
+          setMessage({ type: 'error', text });
+          setTimeout(() => setMessage(null), 5000);
+          return;
         }
       }
 
@@ -223,10 +258,14 @@ export default function AgendamentosPage() {
       setMessage({ type: 'success', text: editingAppointment ? 'Agendamento atualizado com sucesso!' : 'Agendamento criado com sucesso!' });
       setTimeout(() => setMessage(null), 3000);
     } catch (error: unknown) {
-      console.error('Erro ao salvar agendamento:', error);
       const errMsg = error instanceof Error ? error.message : String(error);
       const isConflict = errMsg === 'CONFLITO_DE_HORARIO';
       const isOutOfHours = errMsg === 'FORA_DO_HORARIO';
+
+      if (!isConflict && !isOutOfHours) {
+        console.error('Erro ao salvar agendamento:', error);
+      }
+
       const text = isConflict
         ? 'Ja existe um agendamento para este horario. Escolha outro horario.'
         : isOutOfHours

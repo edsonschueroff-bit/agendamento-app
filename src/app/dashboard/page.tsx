@@ -28,7 +28,7 @@ interface TodayAppointment {
   value: number;
 }
 
-import NotificationManager from '@/components/notifications/NotificationManager';
+// import NotificationManager from '@/components/notifications/NotificationManager';
 
 export default function DashboardPage() {
   const { user, loading, isAuthenticated, userType } = useAuthContext();
@@ -181,7 +181,12 @@ export default function DashboardPage() {
 
   return (
     <AuthenticatedLayout>
-      <NotificationManager />
+      {/*
+        Notificacao automatica do dashboard desativada temporariamente.
+        Manter este ponto de montagem para futura reativacao quando o fluxo real
+        de avisos por e-mail/WhatsApp estiver definido.
+      */}
+      {/* <NotificationManager /> */}
       {/* Header */}
       <header className="bg-white shadow">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
